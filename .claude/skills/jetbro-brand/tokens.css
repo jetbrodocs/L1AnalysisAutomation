@@ -1,0 +1,51 @@
+/* Jetbro Brand Tokens
+   Import: @import url('./tokens.css');
+   Or copy the :root block into your stylesheet.
+   Google Fonts: https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap
+*/
+
+:root {
+  /* Colors */
+  --jetbro-accent: #c45a32;
+  --jetbro-accent-light: #d97b4a;
+  --jetbro-text: #1a1a1a;
+  --jetbro-secondary: #4a4a4a;
+  --jetbro-muted: #7a7a7a;
+  --jetbro-bg: #ffffff;
+
+  /* Gradients */
+  --jetbro-accent-gradient: linear-gradient(90deg, #c45a32, #d97b4a, transparent);
+
+  /* Typography */
+  --jetbro-font-display: 'Bricolage Grotesque', 'Helvetica Neue', 'Arial', sans-serif;
+  --jetbro-font-body: 'Outfit', 'Helvetica Neue', 'Arial', sans-serif;
+  --jetbro-font-mono: 'Space Mono', 'Courier New', monospace;
+}
+
+/* Accent line — signature separator. Use this class instead of inline styles
+   so it exports to PDF correctly. On screen it keeps the orange gradient; in
+   print it falls back to solid orange, because print engines strip gradient
+   backgrounds by default and a background-less 1px line renders as solid black.
+   print-color-adjust: exact forces the solid color to actually print. */
+.jetbro-accent-line {
+  height: 2px;
+  border: 0;
+  background: var(--jetbro-accent-gradient);
+}
+@media print {
+  .jetbro-accent-line {
+    background: #c45a32 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* Print rules — keep headings attached to their content across page breaks. */
+@media print {
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid;
+    break-inside: avoid;
+    page-break-after: avoid;     /* legacy alias for older PDF engines */
+    page-break-inside: avoid;
+  }
+}
