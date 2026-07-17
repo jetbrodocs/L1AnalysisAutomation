@@ -27,6 +27,24 @@ Built from: [obs-l1-analysis](../10-observations/obs-l1-analysis.md). Sub-proces
 
 ## Process Steps
 
+### Flow Diagram — Section Fan-Out
+
+```mermaid
+flowchart TD
+    L1[l1AnalysisWorkflow] --> V[Verdict — 1 call]
+    L1 --> ES[Executive Summary — 1 call]
+    L1 --> FF[Fund Factsheet — 0 calls\ndeterministic, from §4 extraction]
+    L1 --> CL[Claims Ledger — 1 call\n+ upstream verification-checklist calls, §8]
+    L1 --> FL[Flags & Questions — 1 call]
+    L1 --> SD[Scoring Dimensions — 0 calls here\ndisplays §9 output, sibling step]
+    L1 --> MOD[4 Modules — 4 calls\nstrategy/team/ops/track-record]
+    L1 --> ASK[Asks & Materials — 1 call]
+    L1 --> AG[Meeting Agenda — 5 calls\ngenerateMeetingAgendaItemTask]
+    L1 --> SRC[Sources — 0 calls\nderived from other sections' citations]
+
+    V & ES & CL & FL & MOD & ASK -.->|l1PresentationAgentTask\nAnalyst A + Analyst B + Synthesis| CORE[9 calls x 2-3 sub-calls each]
+```
+
 1. `l1AnalysisWorkflow` loads component definitions: 5 top-level analysis TOMLs + 4 in `modules/` subfolder, plus 5 agenda TOMLs.
 2. **Fund Factsheet** — no LLM call. Already built deterministically by `mapPrivateMarketSchema()` during step 6.1b (data extraction); this section just displays that pre-computed result.
 3. **Scoring Dimensions** — no LLM call here either. Displays step 6.4's already-completed output; not part of this workflow's fan-out.

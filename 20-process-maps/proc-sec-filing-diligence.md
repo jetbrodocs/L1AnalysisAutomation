@@ -46,6 +46,19 @@ Built from: [obs-sec-filing-diligence](../10-observations/obs-sec-filing-diligen
    - AUM: parsed to numeric magnitude, checked against asymmetric tolerance `lowerBound = dbVal * 0.4`, `upperBound = dbVal * 2.5` → magnitude_match/mismatch/unparseable/missing.
    - Fund-flag: deck claims private funds exist but SEC `has_private_funds = false` → `inconsistent` (flagged in code as "major red flag").
 7. `MatchChecks` struct (four categorical results, no single numeric score) handed upstream for a judge/LLM to weigh in later stages (scoring, L1).
+
+### Flow Diagram
+
+```mermaid
+flowchart LR
+    A[Acquire\nSEC EDGAR submissions API\n24h cache] --> B[Identify\ndeterministic pattern match\nXML tags / pdftotext regex]
+    B --> C[Extract\ntype-specific, concurrency 5\nregex+LLM hybrid for ADV]
+    C --> D[Verify\nmatch-verification.ts\ndeterministic]
+    D --> E{Domain / Location / AUM /\nFund-flag checks}
+    E -->|mismatch or inconsistent| F[Flag: e.g. magnitude_mismatch,\n"major red flag"]
+    E -->|match| G[MatchChecks struct\n-> handed to judge/LLM]
+```
+
 8. Result feeds into step 6.3 (`fundDeepDiligenceWorkflow` — skips re-running this) and eventually scoring (step 6.4, though see wiring gap below).
 
 ### Parallel/Supporting Data Sources (not gated by steps 1-7)

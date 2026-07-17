@@ -32,6 +32,102 @@ Built from: all `10-observations/obs-*.md` files, themselves sourced from `00-in
 
 ## Process Steps
 
+### Flow Diagram — End to End at a Glance
+
+```mermaid
+flowchart TD
+    A[Upload: webhook or browser] --> B[Store in Tigris\nsha256 dedup]
+    B --> C{Classify document_type\n12 values}
+    C -->|8 marketing types| D[Promote: create/match Fund + Document]
+    C -->|data_room / financial / legal / unknown| Z[Stored, never analyzed]
+    D --> E[workflow-master-fund fires]
+    E --> F[1. Extraction + SEC/regulatory diligence\nfund classification]
+    F --> G[2. Person research\nper key principal]
+    G --> H[3. Fund deep diligence]
+    H --> I[4. Scoring — 4 categories]
+    I --> J[5. L1 Analysis — IC memo]
+    J --> K[Webhook: trigger_sync\nDocument state -> scoring completed]
+    K --> L[Operator dashboard\nFund Intelligence / L1 / Scoring / SEC / People tabs]
+
+    style Z fill:#666,color:#fff
+```
+
+### Flow Diagram — Full Process, Every Stage
+
+```mermaid
+flowchart TD
+    U1[Webhook upload\nFundUploadController] --> STORE
+    U2[Browser upload\nLiveView] --> STORE
+    STORE[Tigris storage\nkey: decks/sha256.ext] --> DEDUP{SHA-256\nalready seen?}
+    DEDUP -->|yes| SKIP[No re-trigger\n§1]
+    DEDUP -->|no| CLASSIFY
+
+    subgraph S2 ["§2 Classification + Rasterization"]
+        CLASSIFY[workflow-document-classify-and-summary\nGemini Flash-Lite structured output] --> DTYPE{document_type\nenum, 1 of 12}
+        RASTER1[pdf_to_images\npreview 144ppi / thumbnail 36ppi]
+        RASTER2[workflow-generate-thumbnails\n+large 300ppi tier]
+        CLASSIFY -.parallel.-> RASTER1
+        CLASSIFY -.parallel.-> RASTER2
+    end
+
+    DTYPE -->|4 non-marketing types:\ndata_room/financial/legal/unknown| STORED[Stored only\nnever analyzed]
+    DTYPE -->|8 marketing types| PROMOTE[Promote:\ncreate/match Fund + Document]
+    PROMOTE --> MASTER["workflow-master-fund fires\n(the one workflow that runs\non every promoted upload)"]
+
+    subgraph STEP1 ["Step 1 — processPitchDeckWorkflow (no try/catch, abort on fail)"]
+        FC["§3 Fund Classification\nPass-1: primaryAssetClass,\nisOpenEnded, managerClassification"]
+        EX["§4 Schema Extraction\ntext-first-then-structure,\nextract-then-normalize numbers"]
+        SEC["§5 SEC Filing Diligence\nacquire -> identify -> extract -> verify\nADV/Form D/13F/13D-G/5500/990/ACFR"]
+        FC --> EX --> SEC
+    end
+    MASTER --> STEP1
+
+    subgraph STEP2 ["Step 2 — Person Research (batch, awaited fully before Step 3)"]
+        TIER["§6 7-way role classification\nkey_principal ... misc, fail-open"]
+        PR["§7 personResearchWorkflow\nJina/Exa dispatch per tier\n(3/8/10 tasks by depth)"]
+        DOSSIER[compile-person-dossier\ntwo dossiers merged]
+        TIER --> PR --> DOSSIER
+    end
+    STEP1 --> STEP2
+
+    subgraph STEP3 ["Step 3 — fundDeepDiligenceWorkflow (skips SEC re-run)"]
+        BASE["§8 Baseline: 6 core + 2 extended tasks"]
+        MISSION["Asset-class mission packs\nPE(7) / Credit(4) / RE(4)"]
+        GAP["critical-audit-gap-analysis.ts\n'skeptic' pass, 5 failure modes"]
+        FOLLOWUP{Gaps found?}
+        BASE --> GAP
+        MISSION --> GAP
+        GAP --> FOLLOWUP
+        FOLLOWUP -->|yes| REDO[Phase-3 follow-up tasks\nre-enter batch]
+        REDO --> GAP
+        FOLLOWUP -->|no| DOSSIER2[FORENSIC MASTER DOSSIER]
+    end
+    STEP2 --> STEP3
+
+    subgraph STEP4 ["Step 4 — fullScoringWorkflow (masterData+teamData only —\nddResult NOT passed: wiring gap)"]
+        CATS["§9 Up to 4 category tasks (A-D)\nmatched by asset_class"]
+        DUAL["Dual-analyst-then-synthesize\nlenient + strict -> synthesis\n= up to 12 Gemini calls"]
+        CATS --> DUAL
+    end
+    STEP3 --> STEP4
+
+    subgraph STEP5 ["Step 5 — l1AnalysisWorkflow (no consolidatedKnowledge/\nscoreResult passed: wiring gap)"]
+        L1SEC["§10 10 sections: Verdict, Exec Summary,\nFactsheet(0 calls), Claims Ledger, Flags,\nScoring(0 calls,sibling), 4 Modules,\nAsks, Agenda(5), Sources(derived)"]
+    end
+    STEP4 --> STEP5
+
+    L1SEC --> SYNC["Webhook: trigger_sync\nl1_analysis_cache, parsed_data_merge\nDocument -> 'scoring completed'"]
+    SYNC --> CALLBACK{Upload came via\nwebhook path?}
+    CALLBACK -->|yes| CB[callback_url notified]
+    CALLBACK -->|no| DASH
+
+    SYNC --> DASH["§13 Operator Dashboard\nFund Intelligence / Slide Analysis /\nWorkflow Status / SEC Data / People /\nScoring / L1 / Gemini Store / Agent Inspection"]
+    DASH --> KA["§15 Knowledge Agent chat\nSIRA / GraphRAG / Vector / Lexical / File Search"]
+
+    style STORED fill:#666,color:#fff
+    style SKIP fill:#666,color:#fff
+```
+
 ### Main Flow
 
 1. **Upload received.** Webhook (`FundUploadController.upload/2`) or direct browser upload via LiveView. → [obs-document-ingestion-classification](../10-observations/obs-document-ingestion-classification.md)
@@ -71,6 +167,35 @@ Built from: all `10-observations/obs-*.md` files, themselves sourced from `00-in
 - **Re-uploading identical bytes**: SHA-256 dedup catches it in step 2 — never re-triggers `workflow-master-fund`.
 - **Uploading a new file for an existing fund** (e.g., updated quarterly deck): creates a new `Document` record linked to the existing `Fund`; triggers a fresh `workflow-master-fund` run scoped to that new document. Fund entity persists and accumulates documents/analyses over time.
 - **Operator-triggered reruns**: via Fund Dashboard's Workflow Status tab — "Dry Run Full" (whole ~4h pipeline) or per-step "rerun_task" (single stage). → [obs-fund-dashboard-ui](../10-observations/obs-fund-dashboard-ui.md)
+
+### Flow Diagram — `workflow-master-fund` Step Sequence
+
+Steps 2 and 3 run sequentially today, not in parallel — see "Known Sequencing Issue" below.
+
+```mermaid
+sequenceDiagram
+    participant U as Upload
+    participant M as master-workflow.ts
+    participant S1 as 1. processPitchDeckWorkflow
+    participant S2 as 2. personResearchWorkflow (batch)
+    participant S3 as 3. fundDeepDiligenceWorkflow
+    participant S4 as 4. fullScoringWorkflow
+    participant S5 as 5. l1AnalysisWorkflow
+    participant W as trigger_sync webhook
+
+    U->>M: promoted document
+    M->>S1: extraction + SEC diligence + maturity class (no try/catch — abort on fail)
+    S1-->>M: masterData, teamData, ddResult
+    M->>S2: await fully (per key principal)
+    S2-->>M: person dossiers
+    M->>S3: await (skips SEC re-run)
+    S3-->>M: fund dossiers, gap analysis
+    M->>S4: fullScoringWorkflow (masterData, teamData only — ddResult NOT passed)
+    S4-->>M: category scores
+    M->>S5: l1AnalysisWorkflow (no consolidatedKnowledge/scoreResult passed)
+    S5-->>M: L1 memo JSON
+    M->>W: {state, l1_analysis_cache, parsed_data_merge}
+```
 
 ## Known Sequencing Issue (Not Yet Optimized)
 

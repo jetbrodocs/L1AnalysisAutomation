@@ -4,6 +4,104 @@ Full pipeline from pitch-deck upload through the final Investment Committee (L1)
 
 Stack: Elixir/Phoenix (`lib/deals_analysis`) for state, storage orchestration, and UI; Trigger.dev TypeScript workers (`src/trigger`) for the document/LLM pipeline; Gemini (`@google/genai`, native structured JSON output) as the primary extraction/synthesis model; Jina and Exa as web deep-research providers; Tigris (S3-compatible) for object storage.
 
+## End-to-End Flow at a Glance
+
+```mermaid
+flowchart TD
+    A[Upload: webhook or browser] --> B[Store in Tigris\nsha256 dedup]
+    B --> C{Classify document_type\n12 values}
+    C -->|8 marketing types| D[Promote: create/match Fund + Document]
+    C -->|data_room / financial / legal / unknown| Z[Stored, never analyzed]
+    D --> E[workflow-master-fund fires]
+    E --> F[1. Extraction + SEC/regulatory diligence\nfund classification]
+    F --> G[2. Person research\nper key principal]
+    G --> H[3. Fund deep diligence]
+    H --> I[4. Scoring — 4 categories]
+    I --> J[5. L1 Analysis — IC memo]
+    J --> K[Webhook: trigger_sync\nDocument state -> scoring completed]
+    K --> L[Operator dashboard\nFund Intelligence / L1 / Scoring / SEC / People tabs]
+
+    style Z fill:#666,color:#fff
+```
+
+## Full Process / Workflow Diagram (Every Stage, End to End)
+
+Every box below maps to a numbered section in this doc — full detail and code pointers live there.
+
+```mermaid
+flowchart TD
+    U1[Webhook upload\nFundUploadController] --> STORE
+    U2[Browser upload\nLiveView] --> STORE
+    STORE[Tigris storage\nkey: decks/sha256.ext] --> DEDUP{SHA-256\nalready seen?}
+    DEDUP -->|yes| SKIP[No re-trigger\n§1]
+    DEDUP -->|no| CLASSIFY
+
+    subgraph S2 ["§2 Classification + Rasterization"]
+        CLASSIFY[workflow-document-classify-and-summary\nGemini Flash-Lite structured output] --> DTYPE{document_type\nenum, 1 of 12}
+        RASTER1[pdf_to_images\npreview 144ppi / thumbnail 36ppi]
+        RASTER2[workflow-generate-thumbnails\n+large 300ppi tier]
+        CLASSIFY -.parallel.-> RASTER1
+        CLASSIFY -.parallel.-> RASTER2
+    end
+
+    DTYPE -->|4 non-marketing types:\ndata_room/financial/legal/unknown| STORED[Stored only\nnever analyzed]
+    DTYPE -->|8 marketing types| PROMOTE[Promote:\ncreate/match Fund + Document]
+    PROMOTE --> MASTER["workflow-master-fund fires\n(the one workflow that runs\non every promoted upload)"]
+
+    subgraph STEP1 ["Step 1 — processPitchDeckWorkflow (no try/catch, abort on fail)"]
+        FC["§3 Fund Classification\nPass-1: primaryAssetClass,\nisOpenEnded, managerClassification"]
+        EX["§4 Schema Extraction\ntext-first-then-structure,\nextract-then-normalize numbers"]
+        SEC["§5 SEC Filing Diligence\nacquire -> identify -> extract -> verify\nADV/Form D/13F/13D-G/5500/990/ACFR"]
+        FC --> EX --> SEC
+    end
+    MASTER --> STEP1
+
+    subgraph STEP2 ["Step 2 — Person Research (batch, awaited fully before Step 3)"]
+        TIER["§6 7-way role classification\nkey_principal ... misc, fail-open"]
+        PR["§7 personResearchWorkflow\nJina/Exa dispatch per tier\n(3/8/10 tasks by depth)"]
+        DOSSIER[compile-person-dossier\ntwo dossiers merged]
+        TIER --> PR --> DOSSIER
+    end
+    STEP1 --> STEP2
+
+    subgraph STEP3 ["Step 3 — fundDeepDiligenceWorkflow (skips SEC re-run)"]
+        BASE["§8 Baseline: 6 core + 2 extended tasks"]
+        MISSION["Asset-class mission packs\nPE(7) / Credit(4) / RE(4)"]
+        GAP["critical-audit-gap-analysis.ts\n'skeptic' pass, 5 failure modes"]
+        FOLLOWUP{Gaps found?}
+        BASE --> GAP
+        MISSION --> GAP
+        GAP --> FOLLOWUP
+        FOLLOWUP -->|yes| REDO[Phase-3 follow-up tasks\nre-enter batch]
+        REDO --> GAP
+        FOLLOWUP -->|no| DOSSIER2[FORENSIC MASTER DOSSIER]
+    end
+    STEP2 --> STEP3
+
+    subgraph STEP4 ["Step 4 — fullScoringWorkflow (masterData+teamData only —\nddResult NOT passed: wiring gap)"]
+        CATS["§9 Up to 4 category tasks (A-D)\nmatched by asset_class"]
+        DUAL["Dual-analyst-then-synthesize\nlenient + strict -> synthesis\n= up to 12 Gemini calls"]
+        CATS --> DUAL
+    end
+    STEP3 --> STEP4
+
+    subgraph STEP5 ["Step 5 — l1AnalysisWorkflow (no consolidatedKnowledge/\nscoreResult passed: wiring gap)"]
+        L1SEC["§10 10 sections: Verdict, Exec Summary,\nFactsheet(0 calls), Claims Ledger, Flags,\nScoring(0 calls,sibling), 4 Modules,\nAsks, Agenda(5), Sources(derived)"]
+    end
+    STEP4 --> STEP5
+
+    L1SEC --> SYNC["Webhook: trigger_sync\nl1_analysis_cache, parsed_data_merge\nDocument -> 'scoring completed'"]
+    SYNC --> CALLBACK{Upload came via\nwebhook path?}
+    CALLBACK -->|yes| CB[callback_url notified]
+    CALLBACK -->|no| DASH
+
+    SYNC --> DASH["§13 Operator Dashboard\nFund Intelligence / Slide Analysis /\nWorkflow Status / SEC Data / People /\nScoring / L1 / Gemini Store / Agent Inspection"]
+    DASH --> KA["§15 Knowledge Agent chat\nSIRA / GraphRAG / Vector / Lexical / File Search"]
+
+    style STORED fill:#666,color:#fff
+    style SKIP fill:#666,color:#fff
+```
+
 ---
 
 ## Core Decision Logic — Every Rule That Classifies, Flags, or Scores a Fund
@@ -85,6 +183,33 @@ Steps 2 and 3 both only depend on step 1's output, but as currently written they
 
 **Queues.** Named Trigger.dev queues with env-tunable concurrency, so a burst of uploads doesn't starve any one stage of capacity: `diligence-workflows`, `llm-generation` (default 20), `sec-scraping` (default 10), `jina-deep-research`, `jina-api`, `deep-research-bulk` (default 10), `test-generation` (fixed 1).
 
+**`workflow-master-fund` step sequence** (steps 2 and 3 run sequentially today, not in parallel — see note above):
+
+```mermaid
+sequenceDiagram
+    participant U as Upload
+    participant M as master-workflow.ts
+    participant S1 as 1. processPitchDeckWorkflow
+    participant S2 as 2. personResearchWorkflow (batch)
+    participant S3 as 3. fundDeepDiligenceWorkflow
+    participant S4 as 4. fullScoringWorkflow
+    participant S5 as 5. l1AnalysisWorkflow
+    participant W as trigger_sync webhook
+
+    U->>M: promoted document
+    M->>S1: extraction + SEC diligence + maturity class (no try/catch — abort on fail)
+    S1-->>M: masterData, teamData, ddResult
+    M->>S2: await fully (per key principal)
+    S2-->>M: person dossiers
+    M->>S3: await (skips SEC re-run)
+    S3-->>M: fund dossiers, gap analysis
+    M->>S4: fullScoringWorkflow (masterData, teamData only — ddResult NOT passed)
+    S4-->>M: category scores
+    M->>S5: l1AnalysisWorkflow (no consolidatedKnowledge/scoreResult passed)
+    S5-->>M: L1 memo JSON
+    M->>W: {state, l1_analysis_cache, parsed_data_merge}
+```
+
 ---
 
 ## 3. Fund Classification
@@ -154,6 +279,16 @@ Steps 2 and 3 both only depend on step 1's output, but as currently written they
 
 No single numeric confidence score — a struct of four categorical match results (`MatchChecks`) is handed upstream for a judge/LLM to weigh.
 
+```mermaid
+flowchart LR
+    A[Acquire\nSEC EDGAR submissions API\n24h cache] --> B[Identify\ndeterministic pattern match\nXML tags / pdftotext regex]
+    B --> C[Extract\ntype-specific, concurrency 5\nregex+LLM hybrid for ADV]
+    C --> D[Verify\nmatch-verification.ts\ndeterministic]
+    D --> E{Domain / Location / AUM /\nFund-flag checks}
+    E -->|mismatch or inconsistent| F[Flag: e.g. magnitude_mismatch,\n\"major red flag\"]
+    E -->|match| G[MatchChecks struct\n-> handed to judge/LLM]
+```
+
 **Other public-data sources queried:**
 - **SEC Form D** (DuckDB/Parquet over EDGAR bulk TSVs) — ground-truth registry of private placement/exempt offerings; CIK/entity name/related persons lookup
 - **Form 13F** — quarterly institutional public-equity holdings; position sizing for large managers
@@ -198,6 +333,35 @@ Fail-open design: no research context → defaults to `extended_team`; parse fai
 
 **Tiered execution** (`workflow.json`) — a dependency graph drives three depth tiers: `firm_leader` (10 tasks, includes forensic + OBA), `key_person` (8 tasks, no forensic/OBA), `extended_team` (3 tasks: preliminary-search, generic, employment-history only). Downstream tasks (regulatory-compliance/reputation/governance/forensic/OBA) inject prior outputs as `prompt_append` context.
 
+```mermaid
+flowchart TD
+    P[preliminary-search] --> G[generic]
+    P --> EH[employment-history]
+    EH --> RC[regulatory-compliance]
+    EH --> REP[reputation]
+    EH --> GOV[governance]
+    EH --> PERF[performance]
+    RC --> FR[forensic-regulatory]
+    RC --> OBA[oba-conflicts]
+
+    subgraph extended_team [extended_team — 3 tasks]
+        P
+        G
+        EH
+    end
+    subgraph key_person [key_person — 8 tasks]
+        RC
+        REP
+        GOV
+        PERF
+        CRED[credentials]
+    end
+    subgraph firm_leader [firm_leader — 10 tasks, +forensic +OBA]
+        FR
+        OBA
+    end
+```
+
 **Source of truth for the dependency graph.** Both this person-research DAG and the fund-research DAG (§8) are generated, not hand-maintained separately in each runtime: `mix research.generate_dag` (`lib/mix/tasks/research/generate_dag.ex`) defines every research task (person and fund), its source schema, and its `depends_on` edges (with `scope`/`resolution: strict`/`injectAs: prompt_append` semantics), then writes the same graph out to both `config/research_dag.json` (consumed Elixir-side) and `src/config/research-dag.ts` (consumed by Trigger.dev) — a codegen step that keeps the two runtimes' understanding of task ordering in sync.
 
 ---
@@ -236,6 +400,28 @@ Every mission file carries `meta.knowledge_agent_guidance` (target metadata cate
 
 **Critical Audit Gap Analysis (`critical-audit-gap-analysis.ts`).** Automated "skeptic" step, run once per entity after baseline research is consolidated. Feeds the full dossier into an LLM against `diligence_analysis.schema.json`, inspecting five focus areas: Performance Blind Spots (missing IRR/MOIC/DPI), Structural Omissions (fee/hurdle/AUM gaps), Operational Risk (undisclosed Tier-1 service providers), Regulatory/Compliance Nuance (missing lawsuits/SEC actions), Data Staleness (metrics >2 quarters old). An "Emerging Manager Protocol" variant activates when `isEmerging` is true. Output (`redFlagsDetected`, `caseNumbers`, `tier2ServiceProviders`, `missingDataForWebSearch`) drives conditional Phase-3 follow-up tasks (regulatory-deep-dive, per-case-number forensic docket search, per-provider reputation check, recursive-deep-search) that re-enter the batch pipeline.
 
+```mermaid
+flowchart TD
+    A[Fund entity] --> B[Baseline: 6 core + 2 extended tasks]
+    A --> C{Asset class?}
+    C -->|Private Credit| D[4 missions:\nfund-mechanics, legal-odd,\nmarket-sector-dd, team-pedigree-dd]
+    C -->|Real Estate| E[4 missions, REPE-tuned]
+    C -->|Private Equity| F[7 missions:\ntrack record, macro, human-capital,\nlitigation, strategy-skeptic, reg/SEC, HR risk]
+    B --> G[dispatcher.ts: executeDeepResearch]
+    D --> G
+    E --> G
+    F --> G
+    G --> H{Internal KB has answer?\nqueryTaskResponse}
+    H -->|yes| I[Use internal fact, no external call]
+    H -->|no| J[Jina default / Exa if requested]
+    I --> K[consolidateFundTask\nFORENSIC MASTER DOSSIER]
+    J --> K
+    K --> L[critical-audit-gap-analysis.ts\n\"skeptic\" pass]
+    L --> M{Gaps found?}
+    M -->|yes| N[Phase-3 follow-up tasks\nre-enter batch pipeline]
+    M -->|no /  after follow-up| O[sync-research-responses.ts\n-> Gemini File Search + Tigris + Parquet]
+```
+
 **Consolidation & sync-back.** `consolidateFundTask` merges all task outputs into a "FORENSIC MASTER DOSSIER" markdown with a fixed structure: Executive Summary, Key Personnel/Alignment/LP Base, Strategy & Thesis, Historical Performance, Regulatory Filings, Operational Infrastructure, Competitive Landscape, Governance & Adverse Media, "Blind Spots" (using `<critical_failure>`/`<unverified>` markup tags), Source Audit/Report Map. `sync-research-responses.ts` uploads every individual raw report plus citations to Gemini File Search stores and Tigris, tagged with metadata, and exports run metadata to Parquet — this file-based sync, not a relational DB write, is how the Elixir side reads results back.
 
 **Providers/schemas.** Jina (default) and Exa (research/research-fast/research-pro tiers) via `dispatcher.ts`; lighter `quick-search.ts` (Jina Search API) backs preliminary search. Key schemas: `deep_research_payload/response.schema.json`, `diligence_analysis.schema.json`, `verification_checklist.schema.json`, `fund_website_analysis/verify_fund_website.schema.json`, `consolidated_team.schema.json`.
@@ -266,6 +452,25 @@ Each letter has up to 5 numbered slots (A1-A5, B1-B4, C1-C4, D1-D4), and each sl
 
 **Total cost of one scoring run:** up to 4 category tasks × 3 calls each = **up to 12 Gemini calls per fund**, not "one call per category" — the batching is at the task level (one dimension-bundling task per category), not the LLM-call level.
 
+```mermaid
+sequenceDiagram
+    participant W as full-scoring-workflow.ts
+    participant A as Pass 1a: lenient analyst\n(gemini-3.1-flash-lite)
+    participant B as Pass 1b: strict compliance analyst\n(gemini-3.1-flash-lite)
+    participant S as Pass 2: synthesis\n"Senior Investment Analyst"
+
+    W->>A: category-bundled rubric + file-search grounding
+    W->>B: category-bundled rubric + file-search grounding
+    par parallel
+        A-->>W: markdown (Evidence/Gaps/Red Flags)
+    and
+        B-->>W: markdown, mechanical threshold application
+    end
+    W->>S: both analyst outputs
+    S-->>W: score_category (5-tier), confidence_score,\nevidence[], red_flags[], one_line_verdict
+    Note over W: repeated per category (up to 4x) = up to 12 calls/fund
+```
+
 **A wiring gap, analogous to the one found in L1 (§10).** `master-workflow.ts` calls `fullScoringWorkflow.triggerAndWait` with only `fundName`, `fundId`, `workflowRunId`, `masterData`, `teamData`, `isDryRun` — it does not pass `fileSha256`, `kbStoreName`, or `cacheControl`, all of which the payload type accepts and are used for idempotency/store-reuse. Concretely: omitting `fileSha256` means the per-run idempotency key always resolves its file-hash segment to the literal string `"no-sha"` (`src/lib/idempotency.ts`), collapsing that part of the dedup mechanism to a constant; omitting `kbStoreName` forces a fresh file-search store lookup instead of reusing one resolved earlier in the pipeline. More significantly: **the SEC/deep-diligence output computed one step earlier in `master-workflow.ts` (`ddResult`, Step 3) is never included in the scoring payload at all** — scoring receives only `masterData`/`teamData` from deck extraction, not the diligence findings sitting right next to it in the same workflow run. Worth fixing alongside the L1 `consolidatedKnowledge` gap — both are the same underlying pattern: a later stage's payload type supports richer upstream context than `master-workflow.ts` actually wires through.
 
 **Quantitative breaking-point tables.** `repe-breaking-points.json` — Real Estate PE specifically — keyed by risk profile (Core/Core-Plus/Value-Add/Value-Add-Conversion/Opportunistic) × property type (Class A Multifamily, Grocery-Anchored Retail, Prime Industrial, Trophy CBD Office, Data Center, Student Housing, etc.). Each combination carries expected cash-on-cash yield, DSCR multiple, net IRR, LTV ranges, an economic-outlook block (treasury yield, SOFR, fed funds, CPI, GDP growth benchmarks), and `breaking_point_thresholds` (hard min/max cutoffs, e.g. DSCR min 1.2x, LTV max 65%, min net IRR 5%, min CoC 3.5%). Functions as reference data consulted during prompting, not a hard programmatic gate — a quantitative-threshold layer complementing the qualitative VETO triggers. This file isn't hand-edited: `mix decode_repe_matrix` (`lib/mix/tasks/decode_repe_matrix.ex`) decodes a real-estate-PE "Strategy and Financial Metrics Matrix" CSV (an external, dated source, tracked by an `as_of_date` outlook column) into this JSON — so the breaking-point thresholds are meant to be periodically refreshed from updated market data, not a static one-time table.
@@ -279,6 +484,22 @@ Each letter has up to 5 numbered slots (A1-A5, B1-B4, C1-C4, D1-D4), and each sl
 **Format.** Not a slide deck — a structured JSON object (`L1AnalysisSchema`) rendered as a Phoenix LiveView **web document** with 10 scrollable sections (anchors `#l1-verdict`, `#l1-exec`, etc.) — an IC memo web page.
 
 **Orchestrator.** The real orchestrator is `l1AnalysisWorkflow` in `src/trigger/pitch-deck/workflows/l1-analysis-workflow.ts`. (`src/trigger/pitch-deck/l1-analysis.ts`, despite the name, only holds Zod schema definitions — `VerdictSchema`, `ExecutiveSummarySchema`, `L1AnalysisSchema`, etc. — no orchestration logic lives there.) It loads component definitions from `l1/definitions/analysis/*.toml` (5 top-level files + a `modules/` subfolder of 4) and `l1/definitions/agenda/*.toml` (5 files). Note: `agents/definitions/l1_presentation/{analysis,agenda,schemas}/` is a parallel, near-identical directory that exists on disk but the workflow never actually reads from it — it's only referenced as an unused default parameter. Treat it as stale/legacy, not the live source.
+
+```mermaid
+flowchart TD
+    L1[l1AnalysisWorkflow] --> V[Verdict — 1 call]
+    L1 --> ES[Executive Summary — 1 call]
+    L1 --> FF[Fund Factsheet — 0 calls\ndeterministic, from §4 extraction]
+    L1 --> CL[Claims Ledger — 1 call\n+ upstream verification-checklist calls, §8]
+    L1 --> FL[Flags & Questions — 1 call]
+    L1 --> SD[Scoring Dimensions — 0 calls here\ndisplays §9 output, sibling step]
+    L1 --> MOD[4 Modules — 4 calls\nstrategy/team/ops/track-record]
+    L1 --> ASK[Asks & Materials — 1 call]
+    L1 --> AG[Meeting Agenda — 5 calls\ngenerateMeetingAgendaItemTask]
+    L1 --> SRC[Sources — 0 calls\nderived from other sections' citations]
+
+    V & ES & CL & FL & MOD & ASK -.->|l1PresentationAgentTask\nAnalyst A + Analyst B + Synthesis| CORE[9 calls x 2-3 sub-calls each]
+```
 
 **Total cost of one memo.** Generating one L1 memo fans out to **14 top-level agent invocations** (9 `l1PresentationAgentTask` calls covering Verdict/Executive Summary/Claims Ledger/Flags/Asks + 4 Modules, plus 5 `generateMeetingAgendaItemTask` calls, one per agenda topic), each of which makes 2-3 sub-model calls internally — roughly 30+ raw LLM requests per memo. Two sections (Fund Factsheet, Scoring Dimensions) are **not** part of this fan-out at all — see below.
 
@@ -375,6 +596,29 @@ Every stage described in §1-10 runs as TypeScript in Trigger.dev, while state, 
 - **Environment routing.** The `preview` environment uses `TRIGGER_SECRET_KEY_PREVIEW` (falling back to the prod key if unset) and adds an `x-trigger-branch` header, so branch-based preview deployments hit isolated Trigger.dev environments without a separate secret per branch.
 - **Shared file bus.** Every outbound payload from Elixir has `bucketName` (from `TIGRIS_BUCKET`) auto-injected — Tigris is the shared object-storage bus both runtimes read/write against, which is why neither side needs a direct RPC to move large files (decks, page images, research reports) between them.
 - **Realtime status.** `lib/trigger_dev/realtime.ex` reimplements Trigger.dev's `useRealtimeRun` React hook for LiveView — polling every ~1.5-3s with terminal-state detection — and `sse_client.ex` provides an SSE alternative against `/realtime/v1/runs/:id`. This is what powers live-updating progress in the Workflow Status tab without a page refresh.
+
+```mermaid
+flowchart LR
+    subgraph Elixir [Elixir/Phoenix]
+        UI[LiveView UI]
+        C[trigger_dev/client.ex]
+        RT[realtime.ex / sse_client.ex]
+    end
+    subgraph TD [Trigger.dev]
+        TASKS[TypeScript workers\nworkflow-master-fund + children]
+    end
+    subgraph Tigris [Tigris S3-compatible]
+        FILES[decks, page images,\nresearch reports]
+    end
+
+    UI --> C
+    C -->|trigger_task / batch_trigger_task\ntrigger_and_wait: exp. backoff| TASKS
+    TASKS -->|get_deep_run: recursive\nchild-run expansion| C
+    C -->|SuperJSON decode,\nfollows outputPresignedUrl| UI
+    RT -->|poll ~1.5-3s or SSE| TASKS
+    Elixir <-->|bucketName auto-injected| Tigris
+    TD <-->|read/write| Tigris
+```
 
 **Deploy model.** Trigger.dev workflows deploy independently of the Phoenix app (`npx trigger.dev deploy --env {preview,staging,prod}`), with secrets managed in the Trigger.dev dashboard rather than app `.env` files — the two runtimes are versioned and released separately, which is part of why the preview-branch header logic above exists (a Phoenix preview deploy and a Trigger.dev preview deploy aren't guaranteed to land at the same moment).
 

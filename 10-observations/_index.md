@@ -24,6 +24,12 @@ Source for all entries below: `00-inbox/pipeline-architecture.md` (Deal Analysis
 - [Knowledge Agent — Chat With Your Data](obs-knowledge-agent-chat.md) — §15
 - [Infrastructure — Provisioned/Dormant & Explicitly Out of Scope](obs-infrastructure-dormant-out-of-scope.md)
 
+## India Market Variant
+
+Separate companion source (`00-inbox/pipeline-architecture-india.md`), planning-stage documentation for an unbuilt India-market variant — kept in its own subfolder since it's a distinct market/build track, not an update to the US pipeline above.
+
+- [india-market/](india-market/_index.md) — full index, 9 observations covering AIF taxonomy, multi-regulator diligence (SEBI/MCA21/RBI/IFSCA), and confirmed build-delta vs. this US pipeline.
+
 ## Confirmed gaps/dead code flagged across these observations
 
 - Scoring: `master-workflow.ts` doesn't pass `fileSha256`/`kbStoreName`/`ddResult` into `fullScoringWorkflow` — see [scoring observation](obs-scoring-rubric.md).

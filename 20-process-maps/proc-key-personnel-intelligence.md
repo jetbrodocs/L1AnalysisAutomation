@@ -43,6 +43,37 @@ Built from: [obs-key-personnel-intelligence](../10-observations/obs-key-personne
 5. Tier assignment determines research depth for step 6 (proc-people-deep-research): `firm_leader` → 10 tasks (includes forensic + OBA); `key_person` → 8 tasks (no forensic/OBA); `extended_team` → 3 tasks (preliminary-search, generic, employment-history only).
 6. Result feeds `personResearchWorkflow` (proc-people-deep-research).
 
+### Flow Diagram — Tiered Execution DAG
+
+```mermaid
+flowchart TD
+    P[preliminary-search] --> G[generic]
+    P --> EH[employment-history]
+    EH --> RC[regulatory-compliance]
+    EH --> REP[reputation]
+    EH --> GOV[governance]
+    EH --> PERF[performance]
+    RC --> FR[forensic-regulatory]
+    RC --> OBA[oba-conflicts]
+
+    subgraph extended_team [extended_team — 3 tasks]
+        P
+        G
+        EH
+    end
+    subgraph key_person [key_person — 8 tasks]
+        RC
+        REP
+        GOV
+        PERF
+        CRED[credentials]
+    end
+    subgraph firm_leader [firm_leader — 10 tasks, +forensic +OBA]
+        FR
+        OBA
+    end
+```
+
 ## Systems and Tools
 
 - `verify-key-principals.ts`, Gemini Flash-Lite.

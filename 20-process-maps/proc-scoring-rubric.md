@@ -37,6 +37,27 @@ Built from: [obs-scoring-rubric](../10-observations/obs-scoring-rubric.md). Sub-
      - Pass 1b — "strict, ruthless compliance analyst": must mechanically apply thresholds without benefit of the doubt (breached limit ⇒ must assign that tier even if fund beat benchmark elsewhere; missing clause ⇒ graded per rubric).
      - Both output markdown (Qualitative Explanation / Evidence / Data Gaps / Red Flags), capped at 10 (single) or 20 (category-batch) search queries, `[NO_RELEVANT_DATA_FOUND]` escape hatch.
    - 5b. Pass 2 — synthesis call ("Senior Investment Analyst") reconciles both analysts, emits final structured JSON: `score_category` (5-tier: Exemplary/Strong/Adequate/Weak/Unacceptable), `confidence_score` (0-100), `evidence[]`, `qualitative_explanation`, `data_gaps[]`, `red_flags[]`, `one_line_verdict`, `citations[]`, `synthesis_notes` (internal-only).
+### Flow Diagram — Dual-Analyst-Then-Synthesize (per category)
+
+```mermaid
+sequenceDiagram
+    participant W as full-scoring-workflow.ts
+    participant A as Pass 1a: lenient analyst\n(gemini-3.1-flash-lite)
+    participant B as Pass 1b: strict compliance analyst\n(gemini-3.1-flash-lite)
+    participant S as Pass 2: synthesis\n"Senior Investment Analyst"
+
+    W->>A: category-bundled rubric + file-search grounding
+    W->>B: category-bundled rubric + file-search grounding
+    par parallel
+        A-->>W: markdown (Evidence/Gaps/Red Flags)
+    and
+        B-->>W: markdown, mechanical threshold application
+    end
+    W->>S: both analyst outputs
+    S-->>W: score_category (5-tier), confidence_score,\nevidence[], red_flags[], one_line_verdict
+    Note over W: repeated per category (up to 4x) = up to 12 calls/fund
+```
+
 6. **VETO check (decision point, embedded in rubric text, not a separate rule engine).** If a criterion lands `Unacceptable` and the rubric text marks it as a hard-fail condition (e.g. no key-person clause, no management-fee offset, fraudulent service providers) → automatic VETO, regardless of other criteria's strength.
 7. **Real Estate PE only — quantitative gate.** `repe-breaking-points.json` (keyed by risk profile × property type, refreshed via `mix decode_repe_matrix` from external CSV) provides hard min/max cutoffs (DSCR, LTV, net IRR, cash-on-cash) checked against the deal's underwriting numbers. Reference data consulted during prompting — not a hard programmatic gate — layered on top of the qualitative VETO triggers.
 8. **Total cost per fund: up to 4 category tasks × 3 calls = up to 12 Gemini calls.**

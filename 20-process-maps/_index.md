@@ -29,3 +29,9 @@ Per-stage detail, one file per `10-observations/` source. Each links back into t
 - [Elixir → Trigger.dev Call Flow](proc-elixir-trigger-bridge.md) — infrastructure mechanics
 - [Knowledge Agent — Chat Query Flow](proc-knowledge-agent-chat.md) — interactive, on-demand
 - [Infrastructure Status Reference](proc-infrastructure-dormant-out-of-scope.md) — not a true process, kept for parity
+
+## India Market Variant
+
+Separate companion build track (unbuilt, planning-stage) — kept in its own subfolder since it's a distinct market variant, not an update to the US pipeline above.
+
+- [india-market/](india-market/_index.md) — full index, main flow + 7 sub-processes covering AIF taxonomy, multi-regulator diligence router, and build-delta vs. this US pipeline.

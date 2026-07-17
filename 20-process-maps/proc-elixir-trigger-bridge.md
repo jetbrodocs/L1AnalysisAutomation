@@ -33,6 +33,31 @@ Built from: [obs-elixir-trigger-bridge](../10-observations/obs-elixir-trigger-br
    - `sse_client.ex` provides an SSE alternative against `/realtime/v1/runs/:id`.
    - Either powers live-updating progress in the Workflow Status tab (proc-fund-dashboard-ui) without a page refresh.
 
+### Flow Diagram
+
+```mermaid
+flowchart LR
+    subgraph Elixir [Elixir/Phoenix]
+        UI[LiveView UI]
+        C[trigger_dev/client.ex]
+        RT[realtime.ex / sse_client.ex]
+    end
+    subgraph TD [Trigger.dev]
+        TASKS[TypeScript workers\nworkflow-master-fund + children]
+    end
+    subgraph Tigris [Tigris S3-compatible]
+        FILES[decks, page images,\nresearch reports]
+    end
+
+    UI --> C
+    C -->|trigger_task / batch_trigger_task\ntrigger_and_wait: exp. backoff| TASKS
+    TASKS -->|get_deep_run: recursive\nchild-run expansion| C
+    C -->|SuperJSON decode,\nfollows outputPresignedUrl| UI
+    RT -->|poll ~1.5-3s or SSE| TASKS
+    Elixir <-->|bucketName auto-injected| Tigris
+    TD <-->|read/write| Tigris
+```
+
 ## Deploy Model (Context, Not a Runtime Step)
 
 - Trigger.dev workflows deploy independently of the Phoenix app (`npx trigger.dev deploy --env {preview,staging,prod}`), secrets managed in the Trigger.dev dashboard, not app `.env` files.
