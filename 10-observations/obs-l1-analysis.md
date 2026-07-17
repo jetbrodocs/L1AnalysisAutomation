@@ -1,0 +1,63 @@
+---
+title: "Observation: L1 Analysis (Final Investment Committee Output)"
+status: draft
+created: 2026-07-17
+updated: 2026-07-17
+tags: [pipeline, l1-memo, gemini, wiring-gap]
+---
+
+# Observation: L1 Analysis (Final Investment Committee Output)
+
+Source: `00-inbox/pipeline-architecture.md` §10, audited against codebase.
+
+## Activity
+
+Generation of the final Investment Committee memo — 10 sections rendered as a Phoenix LiveView scrollable web page, not a slide deck. Some sections are LLM-generated fresh; others are displays of already-computed upstream results.
+
+## Inputs
+
+- Component definitions: `l1/definitions/analysis/*.toml` (5 top-level + `modules/` subfolder of 4), `l1/definitions/agenda/*.toml` (5 files).
+- Fund's Gemini File Search store.
+- Deck extraction output (`consolidatedKnowledge`), scoring output (`scoreResult`) — intended inputs, see Problems below.
+
+## Outputs
+
+- `L1AnalysisSchema` — structured JSON rendered as 10 anchored sections (`#l1-verdict`, `#l1-exec`, etc.).
+- **Verdict**: `decision` (ADVANCE/DECLINE/CONDITIONAL), `verdict_summary`, `what_would_change_our_mind[]`.
+- **Executive Summary**: narrative + `key_strengths[]`/`key_risks[]`.
+- **Fund Factsheet**: deterministic display of `consolidatedKnowledge`, zero LLM calls.
+- **Claims Ledger**: array of claims, each `status` (CONFIRMED/CONTRADICTED/UNVERIFIABLE), `level` (INFO/WARNING/CRITICAL/NOTE), evidence, citations.
+- **Flags & Questions**: severity-ranked (CRITICAL/WARNING/INFO) flags with `questions_to_ask[]`.
+- **Scoring Dimensions**: display of already-completed §9 output.
+- **Modules** (4): `investment_strategy`, `team`, `operational_infrastructure`, `track_record` — 4-tier scale (STRONG/ADEQUATE/WEAK/FLAGGED), scoped to PE/Hedgefunds/VC.
+- **Asks & Materials Requests**: `standalone_asks[]`, `materials_requests[]`.
+- **Meeting Agenda**: 5 topics (concentration/drawdown, key-person/succession, underwriting/valuation, AUM capacity/scaling, operational institutionalization).
+- **Sources**: derived, not a standalone call — union of every section's own grounding citations.
+
+## Systems
+
+- Real orchestrator: `l1AnalysisWorkflow` in `src/trigger/pitch-deck/workflows/l1-analysis-workflow.ts`. (`l1-analysis.ts`, despite its name, only holds Zod schema definitions — no orchestration logic.)
+- **Total cost per memo: 14 top-level agent invocations** (9 `l1PresentationAgentTask` calls + 5 `generateMeetingAgendaItemTask` calls), each making 2-3 sub-model calls — roughly 30+ raw LLM requests per memo.
+- `l1PresentationAgentTask` (drives 9 of 14 calls) — fully generic, config-driven: Pass 1a `gemini-3.1-pro-preview` ("Analyst A", deep-context) + Pass 1b `gemini-2.5-pro` ("Analyst B", strict-quant) in parallel over file-search store (10 search queries cap each, `[NO_RELEVANT_DATA_FOUND]` escape hatch); Pass 2 `gemini-3.1-pro-preview` synthesizes both plus `consolidatedInfo` into schema.
+- `generateMeetingAgendaItemTask` (`meeting-agenda.ts`) — different, simpler agent: single-analyst `gemini-3.1-flash-lite`, 2-pass, payload schema doesn't accept `consolidatedKnowledge`. 5 independent `batch.triggerByTaskAndWait` calls, each with `[examples]` strong/weak answer exemplars for calibration.
+- Claims Ledger is two-stage: `runVerificationChecklistAgent()` (part of §8 fund-deep-diligence pipeline, not `l1AnalysisWorkflow`) makes 4+N calls to extract falsifiable claims; separately, `claims.toml` drives its own standard `l1PresentationAgentTask` call, intended to be fed the verification results via `consolidatedKnowledge`.
+
+## People / Actors
+
+- Fully automated generation; human review happens after, by the Investment Committee reading the memo.
+
+## Timing
+
+- `[UNKNOWN: total memo-generation wall-clock time — 30+ LLM requests, some parallel, no duration stated]`
+
+## Problems / Gaps / Workarounds
+
+- **Stale/dead directory, confirmed unread**: `agents/definitions/l1_presentation/{analysis,agenda,schemas}/` exists on disk, near-identical to the live `l1/definitions/` directory, but the workflow never reads from it — only referenced as an unused default parameter. Treat as stale/legacy.
+- **Confirmed real wiring gap**: `master-workflow.ts` Step 5 calls `l1AnalysisWorkflow.triggerAndWait` **without passing `consolidatedKnowledge` or `scoreResult`**, even though the schema accepts both. Every `l1PresentationAgentTask` call runs with an empty `consolidatedInfo` block — each section is generated from file-search grounding alone, not from the upstream scoring/claims data the design intends. Documented as the intended design in an earlier version of the source doc. Practical effect: the memo's Verdict and Modules sections don't reflect the Scoring Dimensions section sitting right next to them in the same document — the two could disagree.
+- Two sections (Fund Factsheet, Scoring Dimensions) are **not** part of the 14-invocation fan-out — they're displays of results computed entirely elsewhere in the pipeline, not generated by `l1AnalysisWorkflow` itself.
+- Same underlying pattern as the scoring wiring gap (§9): a downstream stage's payload type supports richer upstream context than `master-workflow.ts` actually wires through.
+
+## Open Questions
+
+- Is fixing the `consolidatedKnowledge`/`scoreResult` wiring gap prioritized? What's the actual business impact observed (has a memo verdict ever visibly contradicted its own scorecard)?
+- Should the stale `agents/definitions/l1_presentation/` directory be deleted?
