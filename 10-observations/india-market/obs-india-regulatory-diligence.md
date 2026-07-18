@@ -42,11 +42,11 @@ Acquire a fund/manager's official regulatory record and deterministically cross-
 
 **Per-source acquisition mechanics:**
 - **SEBI intermediary/AIF registration**: scrape/search-based (no bulk API). Confirms registration category (I/II/III), registration number, sponsor/manager names, and — for schemes beyond Angel/LVF — whether the PPM was filed through a SEBI-registered Merchant Banker with a due-diligence certificate.
-- **MCA21**: free real-time lookup by CIN or company name (MCA21 V3 portal). AOC-4/MGT-7 report **corporate structure and statutory financials**, not regulatory AUM in the SEC sense — this is a semantic gap versus US ADV AUM figures, not a like-for-like substitute.
-- **RBI/FEMA**: FC-GPR (30-day filing window), FC-TRS (60-day filing window), annual FLA returns, via FIRMS portal.
-- **IFSCA**: FME tier lookup, GIFT City only.
+- **MCA21**: free real-time lookup by CIN or company name (MCA21 V3 portal). AOC-4/MGT-7 report **corporate structure and statutory financials**, not regulatory AUM in the SEC sense — this is a semantic gap versus US ADV AUM figures, not a like-for-like substitute. DIR-3 KYC (annual, due Sept 30) is the freshness signal for director records. Source: [MCA ROC filing guide](https://beaconfiling.com/blog/roc-forms-decoded-dir3-inc20a-aoc4-mgt7).
+- **RBI/FEMA**: FC-GPR (30-day filing window), FC-TRS (60-day filing window), annual FLA returns, via FIRMS portal. Source: [RBI Master Circular on Foreign Investment](https://www.rbi.org.in/commonman/english/scripts/Notification.aspx?Id=856).
+- **IFSCA**: FME tier lookup, GIFT City only. Source: [IFSCA fund management brochure](https://ifsca.gov.in/CommonDirect/PreviewPdf?id=38fea9cc5969551d78bf00e670b6d4dd&fileName=Brochure_for_Fund_Management_Activities_20251223_0542.pdf).
 - **SEBI SAST**: sourced from BSE/NSE corporate-announcement feeds, not SEBI directly — closest analogue to US Schedule 13D/13G.
-- **Enforcement**: SEBI Adjudication/Enforcement Orders pages searchable by entity name but **not bulk-indexed** the way SEC Item 11 data is — same search-and-match acquisition pattern as SEBI intermediary lookup.
+- **Enforcement**: SEBI Adjudication/Enforcement Orders pages searchable by entity name but **not bulk-indexed** the way SEC Item 11 data is — same search-and-match acquisition pattern as SEBI intermediary lookup. Source: [SEBI enforcement orders](https://www.sebi.gov.in/enforcement/orders.html).
 
 ## People / Actors
 

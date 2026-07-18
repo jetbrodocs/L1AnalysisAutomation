@@ -32,6 +32,7 @@ Three-way category classification, each gating the same downstream stages the US
 - Minimum per-investor commitment: ₹1 crore.
 - SEBI registration fee: ₹5 lakh (Cat I) to ₹15 lakh (Cat III), filed via the SI Portal.
 - Registration timeline: 4-8 months.
+- Sources: [SEBI AIF Regulations 2012, as amended](https://www.sebi.gov.in/legal/regulations/apr-2026/securities-and-exchange-board-of-india-alternative-investment-funds-regulations-2012-last-amended-on-april-18-2026-_101019.html), [Treelife AIF registration guide](https://treelife.in/finance/sebi-aif-registration/).
 
 ## Systems
 
