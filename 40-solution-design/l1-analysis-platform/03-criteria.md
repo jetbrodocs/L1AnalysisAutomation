@@ -539,7 +539,19 @@ flowchart TD
 
 | Code | Name | Severity | Detection Guidance | Rationale |
 |---|---|---|---|---|
-| CR-0001 | No verifiable SEBI registration | CRITICAL | Document contains no SEBI AIF registration number, or states registration is "pending"/"applied for" without a number. Look for the format `IN/AIF{1,2,3}/YY-YY/NNNN`. | An unregistered AIF cannot legally accept commitments. This is a regulatory precondition, not a judgement call. |
+| CR-0001 | No verifiable SEBI registration | CRITICAL | Document contains no SEBI AIF registration number, or states registration is "pending"/"applied for" without a number. Look for the format `IN/AIF{1,2,3}/YY-YY/NNNN`. **See the structural limit below — absence from the register is NOT evidence of non-registration.** | An unregistered AIF cannot legally accept commitments. This is a regulatory precondition, not a judgement call. |
+
+> #### ⚠️ Structural limit on CR-0001 (discovered 2026-07-21 by querying the live register)
+>
+> **SEBI registers the AIF *trust*, not the manager and not the scheme.**
+>
+> Verified against the live register: searching `Neo` returns **7 registered AIFs** — `Neo Alternatives Investment Trust` (`IN/AIF3/21-22/1001`), `Neo Credit Alternatives Investment Trust` (`IN/AIF2/22-23/1042`), and others. But searching the *fund* name, or the *manager* name, returns a genuine "No record(s) available" — because the fund is a **scheme of a registered trust**, and neither the scheme nor the manager is itself a registrant.
+>
+> **Therefore an absent scheme name can never be reported as `failed`.** A criterion that fired on "we searched the register and did not find this fund" would fire on virtually every legitimately-registered AIF in India. The adapter is built so absence cannot produce an adverse finding — the strongest available outcome from a scheme-name miss is `unavailable`, with the trust-name gap stated.
+>
+> **What this means in practice**: verifying registration requires the *trust* name, which appears in the PPM rather than in a marketing deck. That is an analyst-resolvable gap (`unblock_owner: manual_analyst_check`), not an infrastructure one — the analyst supplies the trust name, and the check then completes.
+>
+> This is a good example of a criterion whose detection guidance was written from how the regulation *sounds* rather than how the register *works*. Any institution authoring criteria against a public register should verify what that register is actually keyed on before relying on absence as a signal.
 | CR-0002 | Undisclosed regulatory action against sponsor or manager | CRITICAL | Any mention of ongoing SEBI enforcement, adjudication, show-cause notice, or debarment involving the manager, sponsor, or a named key person — or evidence of such found in research that the document omits. | Material non-disclosure of enforcement action is itself disqualifying, independent of the underlying matter. |
 | ~~CR-0003~~ | ~~Manager unable to evidence any prior track record~~ | — | **MOVED TO RED FLAG 2026-07-21 — see CR-0018 below.** A veto here would silently reject every genuinely first-time manager, and a veto is invisible in a way a red flag is not: the analysis stops rather than surfacing the concern for judgement. | |
 

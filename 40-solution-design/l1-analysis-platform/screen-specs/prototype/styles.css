@@ -1479,6 +1479,269 @@ table.data .num {
 .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-6); }
 @media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } }
 
+/* ===========================================================================
+   FACT TILES — the fund's terms, scannable, each carrying its page.
+
+   Per dataviz/choosing-a-form: a set of single headline values is a stat-tile
+   row, not a chart. The unusual requirement here is PROVENANCE — most stat
+   tiles strip it. Every figure that came from the document links to the page it
+   was read from, so the tile is a claim with a receipt rather than an
+   assertion. The citation is the same `.cite` affordance used on findings, so
+   it opens the same evidence drawer: one interaction, learned once.
+
+   Three tile states, distinguished on three channels (glyph, label, border
+   style) so none of them depends on colour:
+
+     .fact        stated in the document        solid rule, page citation
+     .fact--inf   deduced by the engine         dashed rule, "INFERRED" chip
+     .fact--none  searched for, not found       slate, hatched, "NOT DISCLOSED"
+
+   The dashed border on an inferred tile is doing real work: a confidently
+   styled tile stating a deduced fact is a lie told by design.
+   ------------------------------------------------------------------------ */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2px;                              /* the 2px surface gap */
+  margin-bottom: var(--s-5);
+}
+
+.fact {
+  min-width: 0;
+  padding: var(--s-4) var(--s-4) var(--s-3);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  border-left-width: 2px;
+  border-left-color: var(--rule-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  /* A tile is a unit of meaning; splitting one across a page break in the PDF
+     would orphan a figure from its page citation. */
+  break-inside: avoid;
+}
+
+.fact__label {
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Proportional figures on a standalone value, per marks-and-anatomy. These are
+   read, not column-aligned. */
+.fact__value {
+  font-family: var(--font-body);
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.fact__value--sm { font-size: var(--t-base); font-weight: 400; line-height: 1.35; }
+
+.fact__qual { font-size: var(--t-sm); color: var(--ink-2); font-weight: 300; }
+
+.fact__src {
+  margin-top: auto;
+  padding-top: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+/* On a tile the citation is an AFFORDANCE, not the evidence itself: the quote
+   is what the drawer is for. Elsewhere `.cite` renders the quote inline (a
+   finding must show its evidence in place), so the quote is suppressed here
+   only — collapsing the citation to "✓ p.37" keeps the figure the largest
+   thing on the tile. The quote stays in the DOM for the drawer and for screen
+   readers; it is visually hidden, never removed. */
+.fact .cite {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+.fact .cite .cite__quote {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Inferred: the engine deduced this, the document does not say it --- */
+.fact--inf {
+  border-style: dashed;
+  border-left-style: solid;
+  border-left-color: var(--st-amber);
+}
+.fact--inf .fact__value { color: var(--ink-2); }
+
+.fact__chip {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  margin-bottom: 2px;
+}
+.fact__chip--inf   { color: var(--st-amber); background: var(--tint-amber); }
+.fact__chip--none  { color: var(--st-slate); background: var(--tint-slate); }
+
+/* --- Absent: searched for, not found. The strongest findings on the page. ---
+   Hatched rather than filled, so it can never be mistaken for a rendering
+   failure or an empty slot — a blank tile reads as broken, a hatched tile with
+   a label reads as deliberate. Slate, never red: an absence is a finding, not
+   a fired flag, and the two must not share a colour. */
+.fact--none {
+  border-style: solid;
+  border-left-color: var(--st-slate);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--st-slate) 8%, transparent) 6px 7px
+    ),
+    var(--paper-raised);
+}
+.fact--none .fact__value {
+  font-family: var(--font-mono);
+  font-size: var(--t-base);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--st-slate);
+}
+.fact--none .fact__meaning {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+  font-weight: 300;
+  line-height: 1.45;
+}
+
+/* The absence band gets its own lede so the group reads as a finding set. */
+.absences__lede {
+  font-size: var(--t-md);
+  color: var(--ink);
+  border-left: 2px solid var(--st-slate);
+  padding-left: var(--s-4);
+  margin-bottom: var(--s-5);
+  max-width: 62ch;
+}
+
+/* ===========================================================================
+   ROUTING BAR — open questions by kind, on one shared baseline.
+
+   A part-to-whole split of one total is a single stacked bar, not three tiles
+   and not a pie. The blocked segment is the one that changes what a reader
+   should DO, so it is the only one carrying texture — the same 135° hatch as
+   the absence tiles, which is how "nothing you type will fix this" reads
+   consistently across the page.
+   ------------------------------------------------------------------------ */
+
+.routing { margin-bottom: var(--s-5); }
+
+.routing__track {
+  display: flex;
+  gap: 2px;
+  height: 34px;
+  margin-bottom: var(--s-3);
+}
+.routing__seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border-radius: 1px;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.routing__seg:first-child { border-radius: 2px 1px 1px 2px; }
+.routing__seg:last-child  { border-radius: 1px 4px 4px 1px; }
+
+.routing__seg--doc     { background: var(--st-green); }
+.routing__seg--analyst { background: var(--st-amber); }
+.routing__seg--blocked {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      var(--st-slate) 0 5px,
+      color-mix(in srgb, var(--st-slate) 72%, #000) 5px 10px
+    );
+}
+:root[data-theme="dark"] .routing__seg--blocked { color: #14181d; }
+
+.routing__key {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--s-3);
+}
+.routing__item {
+  min-width: 0;
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--rule-strong);
+}
+.routing__item--doc     { border-left-color: var(--st-green); }
+.routing__item--analyst { border-left-color: var(--st-amber); }
+.routing__item--blocked { border-left-style: dotted; border-left-color: var(--st-slate); }
+
+.routing__n {
+  font-family: var(--font-mono);
+  font-size: var(--t-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  display: block;
+}
+.routing__item--doc     .routing__n { color: var(--st-green); }
+.routing__item--analyst .routing__n { color: var(--st-amber); }
+.routing__item--blocked .routing__n { color: var(--st-slate); }
+
+.routing__what { font-size: var(--t-sm); color: var(--ink-2); display: block; margin-top: 2px; }
+.routing__do   { font-size: var(--t-xs); color: var(--ink-3); display: block; margin-top: var(--s-1); }
+
+/* Unevaluated vetoes rendered beside the scale they never entered. Em dash in
+   slate, never 0.0 — a zero beside a CRITICAL veto reads as "no problem here",
+   which is the exact misreading this treatment exists to prevent. */
+.unapplied {
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px dashed var(--rule-strong);
+}
+.unapplied__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  margin-bottom: var(--s-2);
+}
+.unapplied__glyph { font-family: var(--font-mono); color: var(--st-slate); font-weight: 700; }
+.unapplied__code  { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--ink-2); }
+.unapplied__dash  {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--st-slate);
+}
+.unapplied__note {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--st-slate);
+  letter-spacing: 0.02em;
+}
+
 .doc-section { margin-bottom: var(--s-8); }
 .doc-section__title {
   font-size: var(--t-xl);
@@ -2078,10 +2341,49 @@ body.has-drawer { overflow: hidden; }
   /* An answered item prints with its answer and its provenance. */
   .q__resolved { display: block !important; }
 
-  .shell { grid-template-columns: minmax(0, 1fr); padding: 0; gap: 0; }
+  /* The rail is `display:none` in print, but a two-column grid still reserves
+     its 268px track, pushing the document column past the right margin — which
+     clipped the third tile column in a measured headless print. Collapsing the
+     grid to one column is what actually fixes it. */
+  .shell {
+    display: block;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+    gap: 0;
+    max-width: 100%;
+  }
+  .doc { max-width: 100%; }
   .scorecard, .veto-statement__inner { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
 
   .finding, .q, .kind-band__head, .blocked-notice, .do-not-ask { break-inside: avoid; }
+  /* A tile must never fragment: a figure separated from its page citation is
+     an uncited number, which is the one thing this memo may not produce. */
+  .fact, .routing, .routing__key, .unapplied { break-inside: avoid; }
+  /* Sized in physical units, not fractions of a print viewport whose width is
+     renderer-dependent. A4 minus the 20mm side margins is 170mm; three columns
+     of 54mm plus two 4mm gaps is 170mm exactly, so the third column cannot be
+     clipped by a wider-than-paper layout viewport (which is what happened when
+     this was `repeat(3, 1fr)` — measured, not assumed). */
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, 54mm);
+    gap: 4mm;
+    width: 170mm;
+    max-width: 170mm;
+  }
+  .fact { padding: 3mm; }
+  .fact__value { font-size: 12pt; }
+  .fact__meaning, .fact__qual { font-size: 8pt; }
+
+  /* Same reasoning for the routing key and the shell. */
+  .routing, .routing__track, .routing__key { max-width: 170mm; }
+  .shell, .doc, .doc-section { max-width: 170mm; }
+  /* Hatching and status fills carry meaning here, so they must survive the
+     print pipeline's default colour stripping. */
+  .fact--none, .routing__seg, .routing__seg--blocked, .fact--inf, .routing__item {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .kind-band { break-before: auto; }
   details.disclosure { break-inside: avoid; }
   details.disclosure[open] > summary { color: #4a4a4a; }

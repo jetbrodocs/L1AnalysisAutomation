@@ -295,6 +295,31 @@ The `unavailable`-never-fails-the-run policy (PRD 06 §5, stage 3) is what keeps
 
 **Resolution path**: run the diligence stage from an India-hosted runner or via an Indian egress IP. This is an infrastructure decision, not a code change.
 
+> ### ✅ RESOLVED 2026-07-21 — the diagnosis below was WRONG
+>
+> **SEBI is not geo-fenced. It was never geo-fenced.** The earlier finding — repeated through several documents and into the client deck — was a misdiagnosis, and this note is left in place rather than deleted so the error is traceable.
+>
+> **What is actually true**, verified directly:
+>
+> | Check | Result |
+> |---|---|
+> | Machine's egress | **India** — AS55836 Reliance Jio, Ahmedabad, IP `49.36.91.111` |
+> | `curl https://www.sebi.gov.in/` (default UA) | **HTTP 530** (a Cloudflare edge rejection) |
+> | Same request with a browser `User-Agent` | **HTTP 200** |
+> | SEBI intermediary register endpoint | **HTTP 200, 129KB of real content** |
+>
+> SEBI's Cloudflare rejects requests carrying a default `curl` user-agent. That is ordinary bot filtering, defeated by sending a normal browser UA. It is not a geo-fence, and the "TCP connects then dies after TLS Client Hello" reading was wrong.
+>
+> **How the error survived so long**: the original investigation ran from a sandboxed agent and reported a connection-level failure. I accepted the *shape* of that finding — "connects then drops, therefore below HTTP, therefore a browser cannot help" — because it was internally coherent, and never re-tested it directly with a varied user-agent. It was the user pointing out *"we are in India right now"* that prompted the check that disproved it.
+>
+> **Lesson worth keeping**: a confident mechanism story ("the block is below the HTTP layer") is not evidence. The cheap test — change one header — was never run.
+>
+> **Consequence**: the two SEBI-dependent veto criteria (`CR-0001`, `CR-0002`) are **implementable now**. No India-hosted runner is needed. The diligence stage must set a browser user-agent, which is a one-line change, and the register pages should be checked for whether they render server-side or need a headless browser.
+>
+> ---
+>
+> <details><summary>Superseded diagnosis, retained for traceability</summary>
+>
 > ### 🔴 BLOCKER — re-graded 2026-07-21 (was: enhancement)
 >
 > This is not a degraded-experience issue. It is a **hard ceiling on what the product can produce**, and it compounds with two design decisions that are individually correct:
@@ -311,6 +336,8 @@ The `unavailable`-never-fails-the-run policy (PRD 06 §5, stage 3) is what keeps
 > **Options**: (a) India-hosted runner or VPN egress — cleanest, unblocks all four SEBI-dependent checks; (b) licensed data provider for SEBI/MCA data — costs money, may be more reliable than scraping anyway; (c) ship with the gap explicit and route these to a manual analyst check, treating the memo's blocked-question list as a work order.
 >
 > `[NEEDS DECISION — blocks the completeness claim, not the build]`
+>
+> </details>
 
 **Explicitly not pursued**: MCA's CAPTCHA is a self-hosted canvas image — the technically weak kind. Defeating an access control on a government portal is out of scope regardless of feasibility. DIN verification should route through a licensed data provider.
 

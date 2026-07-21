@@ -446,8 +446,12 @@ Contested findings get a **distinct visual treatment** — split-card, both verd
 |---|---|---|
 | V1 | `review_note` required when `review_status = FLAGGED` | "Say why you're flagging this section. A flag without a reason is noise." |
 | V2 | Attestation `answer` required, non-whitespace, min 3 chars | "Enter your answer." |
-| V3 | **Attestation `source` required, non-whitespace, min 3 chars** | "Where did this come from? A call, an email, a document and page — anything, but something. Attested answers without a source are not accepted." |
-| V4 | Attestation source cannot be `"n/a"`, `"none"`, `"-"`, `"unknown"` (case-insensitive) | "That isn't a source. If you don't have one, this stays an open question — which is a valid outcome." |
+| V3 | **Attestation `source` required, non-whitespace, min 20 chars** — *corrected 2026-07-21, was 3* | "Where did this come from? A call, an email, a document and page — anything, but something specific. Attested answers without a real source are not accepted." |
+| V4 | Attestation source cannot match the stoplist: `"n/a"`, `"none"`, `"-"`, `"unknown"`, `"confirmed"`, `"yes"`, `"known"`, `"as discussed"`, `"per management"` (case-insensitive) | "That isn't a source. If you don't have one, this stays an open question — which is a valid outcome." |
+
+> **Why 20 characters, not 3.** A 3-character floor accepts `"PPM"` — which names a document class, not a location in one, and is exactly the non-answer the rule exists to reject. PRD 07 §2b requires a source a third party can independently check, and the engine now *verifies* the locator (§2c): `"PPM"` cannot be verified, `"PPM page 14, Fund Terms table"` can. The floor matches PRD 03's 40-character `detection_guidance` minimum and PRD 05's 40-character `justification` minimum — same species of rule, same reason: **the field's entire value is its specificity.**
+>
+> The prototype implements 20 characters and the unioned stoplist. This spec is the one that was wrong.
 | V5 | Override requires a rationale, min 20 chars | "Explain your disagreement. This is read by the IC." |
 | V6 | Contested-reading acceptance requires a rationale | "Record why you prefer this reading." |
 | V7 | "Not applicable" requires a reason | "Why does this not apply?" |

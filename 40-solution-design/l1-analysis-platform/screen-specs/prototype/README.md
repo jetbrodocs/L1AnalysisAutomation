@@ -13,7 +13,11 @@ A working HTML prototype of the memo reader, rendering the **real output** of ru
 SEBI Cat II AIF deck, criteria set `CS-2026-0001` (DRAFT), recommendation **HOLD**.
 
 No build step, no framework, no CDN beyond the Google Fonts link the brand guide specifies.
-**Open `index.html` in a browser and it works.**
+**Open `index.html` in a browser and it works** — including from `file://`.
+
+It is **interactive**: citations open an evidence drawer, open questions can be answered (routed by
+kind, with real validation), §11 filters, and the theme toggles. Everything that would reach a server
+is mocked and visibly labelled as such. See **[Interactions](#interactions)** for what to click.
 
 | File | Renders |
 |---|---|
@@ -21,6 +25,97 @@ No build step, no framework, no CDN beyond the Google Fonts link the brand guide
 | `section.html` | `04-risk-factors.md` — four findings with evidence, citations, severity, the contested split, and the unevaluated vetoes |
 | `open-questions.html` | `11-open-questions.md` — 59 items across three kinds |
 | `styles.css` | The shared visual system, importing `jetbro-brand/tokens.css` |
+| `app.js` | Every interaction. Vanilla, no framework, no build step, no CDN |
+
+---
+
+## Interactions
+
+### Try these five things first
+
+1. **Click any citation** on `section.html` — `✓ p.52 "all returns are presented on a 'gross' basis"`.
+   The evidence drawer slides over the body with the cited page text and **the quote highlighted**.
+   Press `Escape`; focus returns to the citation you came from. That is the two-click rule working.
+2. **Click the last citation on CR-0016** — the grey dashed one, `○ p.41`. **No highlight is drawn.**
+   The engine could not locate the string, and drawing a highlight it could not locate would be a
+   fabrication. The drawer says so in those terms.
+3. **On `open-questions.html`, click `Answer with a source`** on any amber item and try to save with
+   the source `n/a`, then `confirmed`, then `PPM p.14`. All three are rejected, each with its own
+   message. This is the validation that keeps unsourced assertions out of an evidence-graded system.
+4. **Click a blocked (dotted slate) item.** Look for the answer field. **There isn't one — and there
+   isn't a disabled one either.** You get the blocking reason and the name of the owner who can
+   unblock it. This absence is the single most important thing the prototype demonstrates.
+5. **Toggle the theme** (top right) and reload. It persists.
+
+### What is real
+
+| Interaction | Behaviour |
+|---|---|
+| Evidence drawer | Real. Opens over the body, never navigates, traps focus, closes on `Escape`, returns focus to the trigger. Finds the quote in the page text by whitespace-insensitive match and highlights it |
+| Verdict routing | Real. `exact` and `layout` highlight; `unverified` **never** does, and says why |
+| "Also cited from page N" | Real. Computed live from the DOM — clicking one re-points the drawer, so a reader on p.52 can walk every finding citing it |
+| Source validation | Real. Rejects empty, rejects under 20 characters, rejects the stoplist (`confirmed`, `yes`, `known`, `n/a`, `as discussed`, `per management`, …). Real error text, `role="alert"`, `aria-invalid` |
+| Answer / N-A validation | Real. V2 (answer required) and V7 (a reason required to dismiss) |
+| PDF-only check | Real. V12 rejects a non-PDF by name and MIME type |
+| Filtering | Real. By kind and by resolved state, with live counts and an `aria-live` status line |
+| Expand / collapse | Real. Per-finding, per-evidence-block, and expand-all for search records |
+| Theme toggle | Real. Stamps `data-theme` on the root, persists in `localStorage`, respects `prefers-color-scheme` when unset |
+| Section navigation | Real for `00`, `04`, `11`. The other nine open a **"not in this prototype"** panel that routes to the three that exist — never a dead link, never a 404 |
+
+### What is mocked, and how you can tell
+
+Nothing reaches a server. Nothing is uploaded. The only persistence is `localStorage`, in your own
+browser, on this machine.
+
+Every mocked action announces itself. Actions that would hit an API surface a toast tagged **`MOCK`**;
+every answer form carries a dashed prototype note before you can submit it; and every saved answer
+renders *"Answered — will apply on re-run. This is a prototype: nothing was sent anywhere."*
+
+**An analyst must never believe they submitted something.** That is why the mock labelling is on the
+form, on the toast, and on the saved record — three places, not one.
+
+| Mocked | What actually happens |
+|---|---|
+| Document upload | A real file picker opens; the filename and size are read and shown. **The file is never read, never uploaded, never stored** |
+| Attestation save | Written to `localStorage` only. Attributed and dated on screen, but no attestation is recorded anywhere |
+| `Open full page` | Needs the rendered page images from `00-pages/`, which the prototype does not load. Says so rather than faking an image |
+| Unblock routing (`Request Indian-egress run`, `Add to Asks`, `Assign to…`) | Toast only. These route to an owner in the product |
+| Re-run, override, flag | Toast only |
+| Page text in the drawer | Real extracted text from the run, **trimmed to the region around each quote**. Where a quote falls outside the bundled excerpt the drawer says so rather than implying a verification failure |
+
+### Rules the code enforces
+
+- **§11 is never collapsed.** A `MutationObserver` on every `.kind-band` reverts any attempt to hide
+  or collapse it. The rule is load-bearing, so it is enforced rather than merely respected.
+- **Filtering is never an export filter.** Items filtered out on screen are `display: block !important`
+  in print. A reading aid must not be able to remove content from a PDF.
+- **A collapse state on screen never reaches the PDF.** Collapsed findings and evidence blocks print
+  in full — the reader of the PDF did not choose the collapse state.
+- **Evidence is expanded by default.** Collapsible, but never collapsed on load: evidence hidden by
+  default would defeat the two-click rule.
+- **Blocked items get no input of any kind.** Verified by assertion, not by inspection — zero
+  `input`/`textarea`/`select` and zero disabled controls across all blocked items.
+
+### Accessibility of the new surfaces
+
+Drawer is `role="dialog"` + `aria-modal` + `aria-labelledby`, traps `Tab` in both directions, closes
+on `Escape`, and restores focus to the trigger (or to `main` if the trigger has since been filtered
+out — focus never lands nowhere). Citations are `role="button"` with `aria-haspopup="dialog"` and
+respond to `Enter` and `Space`. Blocked cards are keyboard-reachable with a descriptive `aria-label`.
+Errors are `role="alert"` and mark their field `aria-invalid`. Filter chips are `aria-pressed`
+toggles with an `aria-live` count. All focus rings are the existing accent ring; none were removed.
+
+Placeholder `<a href="#">` affordances were converted to real `<button>`s where they act rather than
+navigate — the semantics now match the behaviour.
+
+### Re-verified after the interaction pass
+
+- No horizontal overflow at **380 / 760 / 1280px** on all three pages, drawer open or closed
+  (measured, not assumed — at 380px the drawer goes full-width).
+- Both themes on all three pages; the status ramp and the accent reservation are untouched.
+- **No console errors** on any page.
+- Print: drawer, toast, filter bar, expand-all controls, answer panels and forms are all
+  `display: none`; §11 and all disclosure bodies are forced open.
 
 ---
 
@@ -268,14 +363,20 @@ Provenance system · three quote verdicts · the three question kinds and their 
 scorecard meter · veto statement · DRAFT banner · contested split-reading treatment · section rail
 with per-section badges · light and dark themes · print/PDF · responsive behaviour.
 
+### Designed and built — interaction pass (2026-07-21)
+~~The evidence drawer~~ · ~~inline answer forms and their validation~~ · ~~filters~~ — all built.
+See **Interactions** above. Citations open the drawer, `Answer with a source` expands a validated
+attestation form, and §11 filters by kind and resolved state with live counts.
+
 ### Designed but not built in this prototype
-- **The evidence drawer** (spec §3.5, §5). The two-click rule depends on it and it is the single
-  biggest remaining piece. Citations here are anchors with hover states; they do not open a drawer.
-  It needs the rendered page images from `00-pages/`, which the prototype does not load.
-- **Inline answer forms.** The affordances are present and correctly routed by kind, but
-  `Answer with a source` does not expand a form. The validation rules (V2–V4, especially the
-  rejection of `"n/a"` as a source) are specified but not implemented.
-- **Filters** (fired only / unanswered only / contested), review state per section, version banners.
+- **The full-screen source viewer** (the drawer's `Open full page` — click 2 of the two-click rule).
+  It needs the rendered page images from `00-pages/`, which the prototype does not load. The drawer
+  covers click 1 in full and labels the viewer as unavailable rather than faking it.
+- **Per-page citation navigation across the whole run.** "Also cited from page N" works, but only
+  over citations present in the loaded DOM — on `section.html` that is §4's citations, not all 105.
+- **Review state per section, version banners, the re-run flow**, and conditional states D–T from
+  spec §9 (loading, running, failed, superseded, read-only roles). The prototype renders state A
+  (draft criteria), B (veto unevaluated) and O (contested) only.
 
 ### Resolved since the first draft
 

@@ -663,7 +663,18 @@ The last case is the important one: a plausible digit change is exactly how a fa
 | B | 11.5s / $0.047 | 123.3s / $0.418 | clean |
 | C | 40.6s / $0.091 | **792.1s / $2.918** | 1 retry each stage |
 
-Extraction varied **6×** in wall-clock and **7×** in cost across runs of the same document. A Phlo worker's per-run timeout and budget ceiling must be set against the worst observed case, not the median, or long runs will be killed mid-stage. Full-pipeline runs have been observed between ~8 and ~16 minutes at $2–$4.
+Extraction varied **6×** in wall-clock and **7×** in cost across runs of the same document. A Phlo worker's per-run timeout and budget ceiling must be set against the worst observed case, not the median, or long runs will be killed mid-stage.
+
+**Observed full-pipeline range, widened 2026-07-21**: ~8 to ~23 minutes at **$2.03 – $6.06**. An earlier draft of this section said "$2–$4", which the clean verification run exceeded at **$5.70 / 17 minutes** — the stated band was narrower than the measured reality, which is the more dangerous direction for a budget ceiling to be wrong in.
+
+| Run | Wall clock | Cost | Note |
+|---|---|---|---|
+| Reference (early) | ~8 min | $2.03 | fastest observed |
+| Post-split | ~16 min | $2.30 | |
+| Telemetry verification | ~23 min | $6.06 | slowest observed |
+| Clean pre-commit verification | ~17 min | $5.70 | 0 retries, 5 stages |
+
+**Set `--max-budget-usd` and the worker timeout against the top of this range, not the median.** A ceiling at $4 would have killed two of the four runs above mid-stage, and a killed run costs everything spent before the kill.
 
 Mitigation implemented:
 - 4 attempts with exponential backoff

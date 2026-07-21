@@ -221,16 +221,9 @@
       'team has the deepest operating history.',
     '25': 'PIPELINE\n\nAsset A — Valuation agreed with Seller. DD to commence.\n' +
       'Asset B — Valuation being discussed.\nAsset C — Term sheet stage.',
-    '37': 'INDICATIVE TERMS\n\nFund Size          INR 2,000 Crs (with green shoe)\n' +
-      'Expected IRR   ~ 18-20% p.a.\nTerm               7 years from Final Close\n' +
-      'Structure          SEBI registered Category II AIF\n' +
-      'Service Providers  EY · Trilegal · PWC · ICICI Bank · Kfintech',
-    '38': 'CLASSES AND FEES\n\nClass    Contribution      Management Fees p.a.   Carry\n' +
-      'A1       1-2.99 Crs        2.00%                  20.0%\n' +
-      'A2       3-9.99 Crs        1.75%                  15.0%\n' +
-      'A3       10-24.99 Crs      1.50%                  12.5%\n' +
-      'A4       25 Crs and above  1.25%                  10.0%\n\n' +
-      'Hurdle 10%. No catch-up.',
+    '37': "NIIOF-II : Terms\n Category SEBI registered Category II AIF\n\n Structure Close ended\n Fund Size ~ INR 5,000 crores\n Expected IRR ~ 18-20% p.a.\n 7 years from first close\n Fund Structure Fund Term Investment / Reinvestment Period Balance Exit Period\n Initial\n Close\n 4.5 Years 2.5 Years\n\n Return Profile Coupon Distribution + Capital Appreciation\n Drawdowns 6\n Estimated Number of Fund\n 20 to 22\n Investments\n Sector Focus Road & Renewables\n Investment Manager Neo Asset Management Private Limited\n\n Particulars Description\n\n Fund Auditors EY\n\n Key Service Fund Legal Counsel Trilegal\n Tax Advisors PWC\n Providers\n Custodian ICICI Bank\n Registrar and Transfer Agent Kfintech\n*For more details refer PPM\n © Neo Asset Management. Private & Confidential. All Rights Reserved. | 37",
+    '38': "Fee Structure & Drawdown Schedule\n\n Class of Management Carry without catch-up\n Contribution\n Units Fees p.a. (Hurdle Rate 10%) Drawdown\n Notice Issued\n\n A1 1-2.99 Crs 2.00% 20.0%\n\n 15 5 days\n Business grace\n A2 3-9.99 Crs 1.75% 15.0% days to period to\n contribute contribute\n\n A3 10-24.99 Crs 1.50% 12.5%\n\n Fund\n makes\n A4 25 Crs & above 1.25% 10.0%\n investment\n\n*For more details refer PPM\n © Neo Asset Management. Private & Confidential. All Rights Reserved. | 38",
+    '21': "Primary Investment Strategy – ~80% of the Fund\nOperating solar and road assets\n\n Neo Infra has\n Pipeline of ~25% of\n Large Opportunity competitive edge and\n Fund already in shape\n proven track record\n ❖ 9 roads worth Rs 1900\n ❖ Team's exemplary track\n ❖ >100 operating NHAI HAM roads crore already in advanced\n record\n of Rs 25,000 crore equity value stages/ signed deals\n available for sale\n ❖ Deals of more than Rs 2800\n o Expected deployment in 3-4\n crore signed in 2 years\n ❖ Solar and renewable assets of Rs months\n 2 lakh crore available for sale\n ❖ Unmatched connect and\n ❖ Additionally, active\n network\n discussions ongoing for Rs\n 3000+ crore\n ❖ Extraordinary operating\n experience\n\n Targeting gross returns of ~20-21% from this strategy\n\n © Neo Asset Management. Private & Confidential. All Rights Reserved. | 21",
     '41': 'GOVERNANCE\n\n❖ Detailed review with IC sub-committee on performance, comparison ' +
       'against underwriting, and remedial actions where required.\n\n❖ Quarterly reporting to ' +
       'contributors.\n\n❖ Annual audited accounts.',
@@ -360,7 +353,16 @@
       window.setTimeout(function () {
         if (!isOpen) root.hidden = true;
       }, 200);
-      if (t && typeof t.focus === 'function') t.focus();
+      // Focus returns to whatever opened the drawer. If that element is no
+      // longer focusable (filtered out, removed), focus must still land
+      // somewhere real — never nowhere.
+      if (t && typeof t.focus === 'function' && document.contains(t) && t.offsetParent !== null) {
+        t.focus();
+      } else {
+        var fallback = document.querySelector('main') || document.body;
+        if (!fallback.hasAttribute('tabindex')) fallback.setAttribute('tabindex', '-1');
+        fallback.focus();
+      }
     }
 
     return { open: open, close: close, isOpen: function () { return isOpen; } };
@@ -1058,7 +1060,10 @@
           if (reason) {
             var ps = $$('p', reason);
             (ps.length ? ps : [reason]).forEach(function (n) {
-              why.appendChild(el('p', null, n.textContent.replace(/\s+/g, ' ').trim()));
+              var t = n.textContent.replace(/\s+/g, ' ').trim();
+              // The lead sentence is already the banner above; don't say it twice.
+              if (/^This check could not be performed/i.test(t)) return;
+              if (t) why.appendChild(el('p', null, t));
             });
           } else {
             why.appendChild(el('p', null, route ? route.textContent.replace(/\s+/g, ' ').trim() : ''));
@@ -1339,9 +1344,15 @@
       live.setAttribute('aria-live', 'polite');
       bar.appendChild(live);
 
-      var note = el('p', 'filterbar__note',
-        'Filtering is a reading aid only. §11 is never abridged: every item is still in the ' +
-        'document, and every export carries all of them.');
+      // The counts here are over the items rendered individually on this
+      // page, which is fewer than the band totals (36 / 5 / 18) because the
+      // prototype summarises some in a disclosure. Saying so prevents the
+      // filter counts from reading as a contradiction of the band heads.
+      var note = el('p', 'filterbar__note');
+      note.innerHTML = 'Counts are over the items <strong>rendered individually on this page</strong> — ' +
+        'fewer than the band totals (36 · 5 · 18), because the prototype summarises some in a ' +
+        'disclosure. Filtering is a reading aid only: §11 is never abridged, and every export ' +
+        'carries every item.';
       bar.appendChild(note);
 
       anchor.parentNode.insertBefore(bar, anchor.nextSibling);

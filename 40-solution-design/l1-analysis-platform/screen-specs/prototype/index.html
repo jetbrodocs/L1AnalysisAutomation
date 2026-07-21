@@ -78,8 +78,10 @@
       <span class="verdict-figure__qualifier">defer pending answers</span>
     </div>
     <p class="verdict-basis">
-      Red-flag weight <strong>11.0</strong> materially exceeds green-flag weight <strong>1.0</strong>;
+      Red-flag weight <strong>14.0</strong> materially exceeds green-flag weight <strong>1.0</strong>;
       the open questions should be answered before proceeding.
+      <strong>2 veto criteria could not be evaluated</strong>, so this recommendation is made
+      without them.
     </p>
     <p class="verdict-note">
       This is a decision gate, not investment advice. The recommendation is computed
@@ -87,13 +89,13 @@
     </p>
   </div>
 
-  <!-- The weight scale. One shared baseline, one maximum (11.0), so the 11:1
+  <!-- The weight scale. One shared baseline, one maximum (14.0), so the 14:1
        asymmetry is a geometric fact on the page rather than two numbers the
        reader has to compare mentally. -->
   <div class="weight-scale">
     <div class="weight-scale__head">
       <h3 class="weight-scale__title">Weight of evidence</h3>
-      <span class="weight-scale__scale-note">scale 0 – 11.0</span>
+      <span class="weight-scale__scale-note">scale 0 – 14.0</span>
     </div>
 
     <!-- The red bar is SEGMENTED by contributing criterion (3/3/2/3), separated
@@ -103,19 +105,22 @@
       <div class="weight-row__label">
         <span class="weight-row__glyph" aria-hidden="true">▲</span>
         <span class="weight-row__name">Red flags fired</span>
-        <span class="weight-row__value">11.0</span>
+        <span class="weight-row__value">14.0</span>
       </div>
       <div class="weight-row__track weight-row__track--segmented" role="img"
-           aria-label="Red-flag weight 11.0 of an 11.0 scale — the full bar, made of four
-                       contributions: CR-0010 3.0, CR-0011 3.0, CR-0014 2.0, CR-0016 3.0">
+           aria-label="Red-flag weight 14.0 of a 14.0 scale — the full bar, made of five
+                       contributions: CR-0010 3.0, CR-0011 3.0, CR-0012 3.0, CR-0014 2.0,
+                       CR-0016 3.0">
         <span class="seg" style="flex-grow:3" title="CR-0010 · HIGH × 1.0 = 3.0"><b>3.0</b></span>
         <span class="seg" style="flex-grow:3" title="CR-0011 · HIGH × 1.0 = 3.0"><b>3.0</b></span>
+        <span class="seg" style="flex-grow:3" title="CR-0012 · HIGH × 1.0 = 3.0"><b>3.0</b></span>
         <span class="seg" style="flex-grow:2" title="CR-0014 · MEDIUM × 1.0 = 2.0"><b>2.0</b></span>
         <span class="seg" style="flex-grow:3" title="CR-0016 · HIGH × 1.0 = 3.0"><b>3.0</b></span>
       </div>
       <p class="weight-row__criteria">
         CR-0010 <span class="dim">3.0</span> · CR-0011 <span class="dim">3.0</span> ·
-        CR-0014 <span class="dim">2.0</span> · CR-0016 <span class="dim">3.0</span>
+        CR-0012 <span class="dim">3.0</span> · CR-0014 <span class="dim">2.0</span> ·
+        CR-0016 <span class="dim">3.0</span>
       </p>
     </div>
 
@@ -126,12 +131,44 @@
         <span class="weight-row__value">1.0</span>
       </div>
       <div class="weight-row__track weight-row__track--segmented" role="img"
-           aria-label="Green-flag weight 1.0 on the same 11.0 scale — one eleventh of the red bar.
+           aria-label="Green-flag weight 1.0 on the same 14.0 scale — one fourteenth of the red bar.
                        One contribution: CR-0033 1.0">
         <span class="seg" style="flex-grow:1" title="CR-0033 · LOW × 1.0 = 1.0"></span>
-        <span class="seg seg--empty" style="flex-grow:10"></span>
+        <span class="seg seg--empty" style="flex-grow:13"></span>
       </div>
       <p class="weight-row__criteria">CR-0033 <span class="dim">1.0</span></p>
+    </div>
+
+    <!-- The weight that never entered the scale. These are CRITICAL — the
+         heaviest multiplier in the model — and contribute nothing because they
+         could not be checked, not because they passed. Rendered as an em dash
+         in slate, never as 0.0. -->
+    <div class="unapplied">
+      <div class="unapplied__row">
+        <span class="unapplied__glyph" aria-hidden="true">□</span>
+        <span>Veto weight never applied</span>
+        <span class="unapplied__dash" aria-hidden="true">—</span>
+      </div>
+      <div class="unapplied__row">
+        <span class="unapplied__code">CR-0001 · No verifiable SEBI registration</span>
+        <span class="unapplied__dash">
+          <span class="visually-hidden">Contribution: not scored.</span>
+          <span aria-hidden="true">—</span>
+        </span>
+      </div>
+      <div class="unapplied__row">
+        <span class="unapplied__code">CR-0002 · Undisclosed regulatory action</span>
+        <span class="unapplied__dash">
+          <span class="visually-hidden">Contribution: not scored.</span>
+          <span aria-hidden="true">—</span>
+        </span>
+      </div>
+      <p class="unapplied__note">not scored · CRITICAL 5.0 unapplied &times;2</p>
+      <p style="font-size:var(--t-sm); color:var(--ink-2); margin-top:var(--s-3); max-width:56ch">
+        <strong>These are not zeroes.</strong> Each carries the heaviest multiplier in the model
+        and contributed nothing because it was never evaluated. Their absence from the score is a
+        gap in the arithmetic, not a point in the fund's favour.
+      </p>
     </div>
 
     <!-- The formula, published by the engine. An IC that cannot reproduce the
@@ -168,20 +205,37 @@
             <tbody>
               <tr><td>CR-0010</td><td>HIGH</td><td class="num">3.0</td><td class="num">1.0</td><td class="num">3.0</td></tr>
               <tr><td>CR-0011</td><td>HIGH</td><td class="num">3.0</td><td class="num">1.0</td><td class="num">3.0</td></tr>
+              <tr><td>CR-0012</td><td>HIGH</td><td class="num">3.0</td><td class="num">1.0</td><td class="num">3.0</td></tr>
               <tr><td>CR-0014</td><td>MEDIUM</td><td class="num">2.0</td><td class="num">1.0</td><td class="num">2.0</td></tr>
               <tr><td>CR-0016</td><td>HIGH</td><td class="num">3.0</td><td class="num">1.0</td><td class="num">3.0</td></tr>
-              <tr class="total"><th scope="row" colspan="4">Red-flag weight</th><td class="num">11.0</td></tr>
+              <tr class="total"><th scope="row" colspan="4">Red-flag weight</th><td class="num">14.0</td></tr>
               <tr><td>CR-0033</td><td>LOW</td><td class="num">1.0</td><td class="num">1.0</td><td class="num">1.0</td></tr>
               <tr class="total"><th scope="row" colspan="4">Green-flag weight</th><td class="num">1.0</td></tr>
+              <tr>
+                <td>CR-0001</td><td>CRITICAL</td><td class="num">5.0</td><td class="num">1.0</td>
+                <td class="num" style="color:var(--st-slate); font-weight:700">
+                  <span class="visually-hidden">not scored</span><span aria-hidden="true">—</span>
+                </td>
+              </tr>
+              <tr>
+                <td>CR-0002</td><td>CRITICAL</td><td class="num">5.0</td><td class="num">1.0</td>
+                <td class="num" style="color:var(--st-slate); font-weight:700">
+                  <span class="visually-hidden">not scored</span><span aria-hidden="true">—</span>
+                </td>
+              </tr>
+              <tr class="total">
+                <th scope="row" colspan="4">Unapplied veto weight</th>
+                <td class="num" style="color:var(--st-slate)">not scored</td>
+              </tr>
             </tbody>
           </table>
         </div>
         <p class="contested-note">
-          <strong>CR-0014 is contested and still contributes 2.0</strong> — 18% of the red weight.
-          It is carried into the score on the strict reading. Accepting the lenient reading would
-          reduce the red weight to 9.0 — which lands <em>exactly on</em> the <code>hold</code>
-          threshold (red ≥ 9.0 and red &gt; 2 × green), so the recommendation still holds either way.
-          It does not turn on this contest, but it has no margin above it.
+          <strong>Two findings are contested and both still contribute</strong> — CR-0012 (3.0) and
+          CR-0014 (2.0), together 5.0, or 36% of the red weight. Both are carried on the strict
+          reading. On the lenient reading the red weight falls to 9.0, which still clears the
+          <code>hold</code> threshold (red ≥ 9.0 and red &gt; 2 × green) — but lands
+          <em>exactly on</em> it. The recommendation holds either way; it has no margin above it.
           <a href="section.html#CR-0014">See both readings</a>
         </p>
       </div>
@@ -189,25 +243,25 @@
 
     <div class="count-strip">
       <div class="count-strip__item count-strip__item--red">
-        <span class="count-strip__value">4</span>
-        <span class="count-strip__label">Red fired</span>
+        <span class="count-strip__value">5</span>
+        <span class="count-strip__label">▲ Red fired</span>
       </div>
       <div class="count-strip__item count-strip__item--green">
         <span class="count-strip__value">1</span>
-        <span class="count-strip__label">Green fired</span>
+        <span class="count-strip__label">● Green fired</span>
       </div>
       <div class="count-strip__item count-strip__item--amber">
-        <span class="count-strip__value">1</span>
-        <span class="count-strip__label">Contested</span>
+        <span class="count-strip__value">2</span>
+        <span class="count-strip__label">◑ Contested</span>
       </div>
       <div class="count-strip__item count-strip__item--slate">
         <span class="count-strip__value">2</span>
-        <span class="count-strip__label">Unevaluated</span>
+        <span class="count-strip__label">□ Unevaluated</span>
       </div>
     </div>
 
     <p style="font-family:var(--font-mono); font-size:var(--t-xs); color:var(--ink-3); margin-top:1rem;">
-      Lenient / strict agreement 82.4% · 17 criteria evaluated
+      Lenient / strict agreement 76.5% · 17 criteria evaluated
     </p>
   </div>
 </section>
@@ -251,14 +305,14 @@
         <li><a class="rail__item" href="#"><span class="rail__num">01</span><span>Recommendation</span><span class="rail__badge rail__badge--quiet"></span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">02</span><span>Rationale</span><span class="rail__badge rail__badge--quiet"></span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">03</span><span>Fund Facts</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
-        <li><a class="rail__item" href="section.html"><span class="rail__num">04</span><span>Risk Factors</span><span class="rail__badge rail__badge--red">4</span></a></li>
+        <li><a class="rail__item" href="section.html"><span class="rail__num">04</span><span>Risk Factors</span><span class="rail__badge rail__badge--red">5</span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">05</span><span>Supporting Factors</span><span class="rail__badge rail__badge--quiet">1</span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">06</span><span>Fees &amp; Terms</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">07</span><span>Team</span><span class="rail__badge rail__badge--quiet"></span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">08</span><span>Track Record</span><span class="rail__badge rail__badge--quiet"></span></a></li>
-        <li><a class="rail__item" href="#"><span class="rail__num">09</span><span>Contested</span><span class="rail__badge rail__badge--amber">1</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">09</span><span>Contested</span><span class="rail__badge rail__badge--amber">2</span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">10</span><span>Asks</span><span class="rail__badge rail__badge--quiet"></span></a></li>
-        <li><a class="rail__item" href="open-questions.html"><span class="rail__num">11</span><span>Open Questions</span><span class="rail__badge rail__badge--slate">59</span></a></li>
+        <li><a class="rail__item" href="open-questions.html"><span class="rail__num">11</span><span>Open Questions</span><span class="rail__badge rail__badge--slate">57</span></a></li>
         <li><a class="rail__item" href="#"><span class="rail__num">12</span><span>Sources</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
       </ul>
     </div>
@@ -292,56 +346,230 @@
   <!-- ---------- DOCUMENT ---------- -->
   <main class="doc">
 
-    <!-- Open questions -->
-    <section class="doc-section" aria-labelledby="oq-h">
-      <h2 class="doc-section__title" id="oq-h">Open questions — 59</h2>
+    <!-- ---------- FUND FACTS ---------- -->
+    <!-- Stat tiles, not table rows. The unusual part is that every figure keeps
+         its page citation and opens the same evidence drawer the findings use —
+         an infographic that strips provenance would undo the product's thesis. -->
+    <section class="doc-section" aria-labelledby="ff-h">
+      <h2 class="doc-section__title" id="ff-h">Fund facts</h2>
 
       <p class="doc__lede">
-        59 questions could not be determined across the run. They are stated rather than omitted,
+        Every figure below was read from the page named on the tile. Click a page reference to see
+        the sentence it came from.
+      </p>
+
+      <div class="facts">
+        <div class="fact">
+          <span class="fact__label">Target size</span>
+          <span class="fact__value">₹5,000<span class="fact__qual"> cr</span></span>
+          <span class="fact__qual">approximate, as written</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.37</span><span class="cite__quote">"~ INR 5,000 crores"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Expected IRR</span>
+          <span class="fact__value">18–20<span class="fact__qual">%</span></span>
+          <span class="fact__qual">gross, p.a. — not net of fees</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.37</span><span class="cite__quote">"~ 18-20% p.a."<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Fund term</span>
+          <span class="fact__value">7<span class="fact__qual"> yrs</span></span>
+          <span class="fact__qual">4.5 investment · 2.5 exit</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.37</span><span class="cite__quote">"7 years from first close"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Drawdowns</span>
+          <span class="fact__value">6</span>
+          <span class="fact__qual">scheduled</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.37</span><span class="cite__quote">"Drawdowns                    6"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Target investments</span>
+          <span class="fact__value">20–22</span>
+          <span class="fact__qual">roads &amp; renewables</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.37</span><span class="cite__quote">"20 to 22"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Hurdle rate</span>
+          <span class="fact__value">10<span class="fact__qual">%</span></span>
+          <span class="fact__qual">carry without catch-up</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.38</span><span class="cite__quote">"(Hurdle Rate 10%)"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Management fee</span>
+          <span class="fact__value fact__value--sm">2.00 / 1.75 / 1.50 / 1.25%</span>
+          <span class="fact__qual">tiered by unit class A1–A4; no single headline rate</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.38</span><span class="cite__quote">"Fee Structure &amp; Drawdown Schedule"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Carried interest</span>
+          <span class="fact__value fact__value--sm">20 / 15 / 12.5 / 10%</span>
+          <span class="fact__qual">tiered by unit class A1–A4</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.38</span><span class="cite__quote">"Carry without catch-up"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact">
+          <span class="fact__label">Structure</span>
+          <span class="fact__value fact__value--sm">Category II AIF</span>
+          <span class="fact__qual">close-ended</span>
+          <span class="fact__src">classification</span>
+        </div>
+
+        <!-- Inferred, and marked as such on three channels: dashed border, amber
+             chip, and the words "not stated". A confidently styled tile stating
+             a deduced fact would be a lie told by design. -->
+        <div class="fact fact--inf">
+          <span class="fact__chip fact__chip--inf">◐ INFERRED</span>
+          <span class="fact__label">Minimum commitment</span>
+          <span class="fact__value fact__value--sm">₹1–2.99 cr</span>
+          <span class="fact__qual">deduced from a contribution band, not stated as a minimum</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.38</span><span class="cite__quote">"1-2.99 Crs"<span class="visually-hidden">Verified exact.</span></span></a> · medium confidence</span>
+        </div>
+
+        <div class="fact fact--inf">
+          <span class="fact__chip fact__chip--inf">◐ INFERRED</span>
+          <span class="fact__label">Geography</span>
+          <span class="fact__value fact__value--sm">India</span>
+          <span class="fact__qual">inferred from Indian counterparties throughout; no explicit
+            mandate is stated</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.21</span><span class="cite__quote">"&gt;100 operating NHAI HAM roads"<span class="visually-hidden">Verified exact.</span></span></a> · medium confidence</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- WHAT THE DOCUMENT DOES NOT SAY ---------- -->
+    <!-- The most important facts on this page are absences. Rendering only what
+         exists would hide the strongest findings, so absence gets a treatment as
+         strong as presence — hatched and labelled, never a blank tile, which
+         would read as a rendering failure rather than a finding. -->
+    <section class="doc-section" aria-labelledby="abs-h">
+      <h2 class="doc-section__title" id="abs-h">Not disclosed — 5</h2>
+
+      <p class="absences__lede">
+        These are <strong>findings, not gaps in the analysis.</strong> The engine searched for each
+        one and the document does not contain it. A fund that does not state its sponsor commitment,
+        its key-person provision or its net-of-fee return has told you something about all three.
+      </p>
+
+      <div class="facts">
+        <div class="fact fact--none">
+          <span class="fact__chip fact__chip--none">□ NOT DISCLOSED</span>
+          <span class="fact__label">Net return</span>
+          <span class="fact__value">GROSS ONLY</span>
+          <span class="fact__meaning">All returns are presented gross. No net-of-fee figure appears
+            anywhere in the document.</span>
+          <span class="fact__src"><a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.52</span><span class="cite__quote">"all returns are presented on a “gross” basis"<span class="visually-hidden">Verified exact.</span></span></a></span>
+        </div>
+
+        <div class="fact fact--none">
+          <span class="fact__chip fact__chip--none">□ NOT DISCLOSED</span>
+          <span class="fact__label">GP / sponsor commitment</span>
+          <span class="fact__value">ABSENT</span>
+          <span class="fact__meaning">No sponsor commitment is stated. The manager's own capital at
+            risk is unknown.</span>
+          <span class="fact__src">searched · not found</span>
+        </div>
+
+        <div class="fact fact--none">
+          <span class="fact__chip fact__chip--none">□ NOT DISCLOSED</span>
+          <span class="fact__label">Key-person clause</span>
+          <span class="fact__value">ABSENT</span>
+          <span class="fact__meaning">No key-person provision is stated, though 14 named individuals
+            are presented as the team.</span>
+          <span class="fact__src">searched · not found</span>
+        </div>
+
+        <div class="fact fact--none">
+          <span class="fact__chip fact__chip--none">□ NOT DISCLOSED</span>
+          <span class="fact__label">Valuation policy</span>
+          <span class="fact__value">ABSENT</span>
+          <span class="fact__meaning">No valuation policy is stated for assets that are largely
+            unlisted.</span>
+          <span class="fact__src">searched · not found</span>
+        </div>
+
+        <div class="fact fact--none">
+          <span class="fact__chip fact__chip--none">□ NOT DISCLOSED</span>
+          <span class="fact__label">Realised DPI</span>
+          <span class="fact__value">ABSENT</span>
+          <span class="fact__meaning">The predecessor fund reports a tracking gross IRR but no
+            realisations. Nothing has been returned.</span>
+          <span class="fact__src">searched · not found</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Open questions -->
+    <section class="doc-section" aria-labelledby="oq-h">
+      <h2 class="doc-section__title" id="oq-h">Open questions — 57</h2>
+
+      <p class="doc__lede">
+        57 questions could not be determined across the run. They are stated rather than omitted,
         and several are more informative than the facts that were established — a fund that does not
         disclose its sponsor commitment has told you something.
       </p>
 
-      <div class="table-scroll">
-        <table class="data">
-          <caption>Routing — what to do with each kind</caption>
-          <thead>
-            <tr><th scope="col">Kind</th><th scope="col" class="num">Count</th><th scope="col">What to do</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="prov prov--document"><span class="prov__glyph" aria-hidden="true">✓</span> DOCUMENT</span>
-                  Answerable from a document we do not have</td>
-              <td class="num">36</td>
-              <td>Request the document</td>
-            </tr>
-            <tr>
-              <td><span class="prov prov--attested"><span class="prov__glyph" aria-hidden="true">✎</span> ATTESTED</span>
-                  Answerable by an analyst</td>
-              <td class="num">5</td>
-              <td>An analyst can settle it</td>
-            </tr>
-            <tr>
-              <td><span class="prov prov--unattested"><span class="prov__glyph" aria-hidden="true">□</span> BLOCKED</span>
-                  The check could not be performed</td>
-              <td class="num">18</td>
-              <td><strong>Do not ask the manager</strong> — see owner</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- A part-to-whole split of one total: one stacked bar on a shared
+           baseline, not three tiles and not a pie. The blocked segment carries
+           the same 135° hatch as the absence tiles — "nothing you type will fix
+           this" reads the same way everywhere on the page. -->
+      <div class="routing">
+        <div class="routing__track" role="img"
+             aria-label="57 open questions by routing: 33 answerable from a document we do not have,
+                         5 answerable by an analyst, 19 externally blocked.">
+          <span class="routing__seg routing__seg--doc" style="flex-grow:33">33</span>
+          <span class="routing__seg routing__seg--analyst" style="flex-grow:5">5</span>
+          <span class="routing__seg routing__seg--blocked" style="flex-grow:19">19</span>
+        </div>
+
+        <div class="routing__key">
+          <div class="routing__item routing__item--doc">
+            <span class="routing__n">33</span>
+            <span class="routing__what">
+              <span class="prov prov--document"><span class="prov__glyph" aria-hidden="true">✓</span> DOCUMENT</span>
+              Answerable from a document we do not have
+            </span>
+            <span class="routing__do">Request the document</span>
+          </div>
+          <div class="routing__item routing__item--analyst">
+            <span class="routing__n">5</span>
+            <span class="routing__what">
+              <span class="prov prov--attested"><span class="prov__glyph" aria-hidden="true">✎</span> ATTESTED</span>
+              Answerable by an analyst
+            </span>
+            <span class="routing__do">An analyst can settle it</span>
+          </div>
+          <div class="routing__item routing__item--blocked">
+            <span class="routing__n">19</span>
+            <span class="routing__what">
+              <span class="prov prov--unattested"><span class="prov__glyph" aria-hidden="true">□</span> BLOCKED</span>
+              The check could not be performed
+            </span>
+            <span class="routing__do"><strong>Do not ask the manager</strong> — see owner</span>
+          </div>
+        </div>
       </div>
 
       <div class="do-not-ask">
-        <p class="do-not-ask__lead">18 of these are blocked, not open.</p>
+        <p class="do-not-ask__lead">19 of these are blocked, not open.</p>
         <p>
           The checks behind them could not be performed, so no answer from the manager would resolve
           them. They must not be sent as manager questions.
+          <strong>Absence of a check is not a finding</strong> — none of these is a finding of no
+          adverse history; each is the absence of a search.
         </p>
         <div class="owner-tally">
           <span>Owners:</span>
-          <span>Infrastructure <b>10</b></span>
-          <span>Analyst (manual check) <b>5</b></span>
-          <span>Procurement <b>3</b></span>
+          <span>Infrastructure <b>11</b></span>
+          <span>Procurement <b>5</b></span>
+          <span>Analyst (manual check) <b>3</b></span>
         </div>
       </div>
 
