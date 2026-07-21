@@ -38,6 +38,7 @@ from l1.memo_checks import (
     collect_extraction_numbers,
 )
 from l1.stages.memo import render_fund_facts, render_open_questions
+from l1.stages.scoring import _summarise
 from l1.unresolved import assert_entries_valid, coerce_entry, enforce_kind_safety
 from l1.stages.scoring import (
     _check_exclusive_pairs,
@@ -541,6 +542,75 @@ class TestInvariant62:
     def test_veto_status_cannot_be_invented(self):
         with pytest.raises(InvariantViolation):
             assert_veto_consistency({"vetoed": True}, {"vetoed": False})
+
+
+class TestVetoDecisiveness:
+    """A veto rejects a fund outright, so it must rest on evidence both passes
+    agree on.
+
+    Found on the first run where SEBI was actually reachable: CR-0001 fired
+    `contested` at `low` confidence and flipped the recommendation from `hold`
+    to `pass`. The finding was defensible; letting a coin-flip terminate a deal
+    was not. These tests exist so that guard cannot be quietly removed.
+    """
+
+    @staticmethod
+    def _veto(code, **kw):
+        base = {
+            "criterion_code": code, "tier": "VETO", "severity": "CRITICAL",
+            "weight": 1.0, "fired": True, "status": "fired",
+            "contested": False, "confidence": "high",
+        }
+        base.update(kw)
+        return base
+
+    def test_a_clean_veto_still_rejects(self):
+        """The guard must not defang a veto that both passes agreed on."""
+        out = _summarise([self._veto("CR-0001")])
+        assert out["recommendation"] == "pass"
+        assert "CR-0001" in out["recommendation_basis"]
+
+    def test_a_contested_veto_does_not_reject(self):
+        out = _summarise([self._veto("CR-0001", contested=True, confidence="low")])
+        assert out["recommendation"] != "pass", (
+            "a veto contested between the two passes must not reject a fund on its own"
+        )
+        assert out["recommendation"] == "hold"
+
+    def test_a_low_confidence_veto_does_not_reject(self):
+        out = _summarise([self._veto("CR-0001", confidence="low")])
+        assert out["recommendation"] != "pass"
+
+    def test_a_downgraded_veto_is_reported_not_hidden(self):
+        """Downgrading must never look like the veto did not fire. A reader has
+        to know one was in play and why it was not decisive."""
+        out = _summarise([self._veto("CR-0001", contested=True, confidence="low")])
+        basis = out["recommendation_basis"]
+        assert "CR-0001" in basis
+        assert "not decisively" in basis or "not decisive" in basis
+        assert "contested" in basis.lower()
+
+    def test_a_downgraded_veto_keeps_its_weight_and_fired_status(self):
+        """The concern is not softened, only its power to terminate. The finding
+        stays fired and keeps contributing, so the memo still carries it."""
+        findings = [self._veto("CR-0001", contested=True, confidence="low")]
+        _summarise(findings)
+        f = findings[0]
+        assert f["fired"] is True
+        assert f["veto_downgraded"] is True
+        assert f["score_contribution"] == f["effective_weight"] > 0
+
+    def test_one_clean_veto_still_rejects_alongside_a_contested_one(self):
+        """A decisive veto is not neutralised by an indecisive one beside it."""
+        out = _summarise([
+            self._veto("CR-0001", contested=True, confidence="low"),
+            self._veto("CR-0002"),
+        ])
+        assert out["recommendation"] == "pass"
+        assert "CR-0002" in out["recommendation_basis"]
+        assert "CR-0001" in out["recommendation_basis"], (
+            "the non-decisive veto must still be reported"
+        )
 
 
 # =====================================================================

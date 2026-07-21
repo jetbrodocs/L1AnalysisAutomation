@@ -326,32 +326,33 @@ The source field is **required and cannot be satisfied by whitespace**. An attes
 
 ### 6.3 `externally_blocked` — do NOT invite an answer
 
-**The six diligence checks:** `sebi_registration_active`, `sebi_enforcement_actions`, `mca_master_data`, `ifsca_gift_city_registration`, `registered_address_matches_hq`, `key_persons_appear_in_filings`.
+**The four blocked diligence checks:** `mca_master_data`, `ifsca_gift_city_registration`, `registered_address_matches_hq`, `key_persons_appear_in_filings`.
 
-These carry **no answer field, no upload button, no text input.** Inviting an analyst to "answer" a geo-fenced register check is a broken affordance, not a minor UI flaw (overview §1).
+These carry **no answer field, no upload button, no text input.** Inviting an analyst to "answer" a login-walled register check is a broken affordance, not a minor UI flaw (overview §1).
+
+> **Corrected 2026-07-21.** This section formerly listed six checks and used `sebi_registration_active` as the worked example, described as geo-fenced with an "Indian egress" route. **The geo-fence did not exist** (overview §8a). Both SEBI checks now run for real and are no longer externally blocked. `mca_master_data` replaces SEBI as the worked example — and is a better one, because its blocker is a deliberate access control we decline to defeat, not a header bug that could turn out to be wrong next week.
 
 ```
-┌─ sebi_registration_active ──────────────────── externally blocked ─┐
+┌─ mca_master_data ───────────────────────────── externally blocked ─┐
 │ 🚫 This check could not be performed. Nothing you can type or      │
 │    upload will resolve it.                                          │
 │                                                                     │
-│ Source     SEBI intermediary register — www.sebi.gov.in            │
-│ Attempted  2026-07-20 19:54:59 UTC                                  │
+│ Source     MCA21 V3 master data — www.mca.gov.in                    │
+│ Attempted  2026-07-21 04:10:29 UTC                                  │
 │ Outcome    unavailable                                              │
 │                                                                     │
-│ Why  DNS resolves (202.191.143.30 / .158) and TCP connect to :443  │
-│      succeeds, but the connection is dropped after the TLS Client   │
-│      Hello. A real Chrome browser fails identically to curl, which  │
-│      places the block below the HTTP layer — a geo-fence or         │
-│      source-IP WAF, not an outage or bot detection. A headless      │
-│      browser does not help.                                         │
+│ Why  Company master data redirects to a login (VERIFIED:            │
+│      /master-data/MDS.html → fologin.html), and DIN status enquiry  │
+│      is gated by a self-hosted canvas CAPTCHA that appears on       │
+│      submit, not on load. Both are deliberate access controls on a  │
+│      government system. The engine does not circumvent them.        │
 │                                                                     │
-│ Blocks  CR-0001 (VETO — No verifiable SEBI registration)            │
-│         Reported as UNEVALUATED — neither fired nor clean.          │
+│ Blocks  Nothing at veto tier. Two dependent checks inherit it:      │
+│         registered_address_matches_hq, key_persons_appear_in_filings│
 │                                                                     │
 │ To unblock                                                          │
-│   → Re-run this check from an Indian IP  [Request Indian-egress run]│
-│   → Or ask the manager for the registration number and certificate  │
+│   → Route through a licensed data provider   [Owner: procurement]   │
+│   → Or ask the manager for the CIN and incorporation certificate    │
 │     [Add to Asks list]                                              │
 │                                                                     │
 │ [Assign to…]   [Mark as handled outside the system ▾]               │
@@ -362,13 +363,20 @@ Per-check routing differs because the blocking reasons differ:
 
 | Check | Blocking reason | Route offered |
 |---|---|---|
-| `sebi_registration_active`, `sebi_enforcement_actions` | Geo-fence / source-IP WAF below the HTTP layer | Re-run from Indian egress; or ask the manager |
 | `mca_master_data` | Requires an authenticated MCA account; DIN enquiry is CAPTCHA-gated. **Deliberate access controls on a government system — the engine does not attempt to circumvent them** | Route through a licensed data provider; assign to whoever holds the account |
 | `ifsca_gift_city_registration` | Directory renders rows client-side; a plain HTTP fetch yields an empty table, indistinguishable from a genuine "no match" | Request a browser-driven fetch |
 | `registered_address_matches_hq` | Requires both a document HQ address (not obtained) and a filed register address | Partially unblockable — supply the HQ address, then re-run |
 | `key_persons_appear_in_filings` | No filed director list retrieved | Depends on MCA/ZaubaCorp unblocking first |
 
 Each blocked item states, in the item itself, that **absence of a check is not a finding**: *"This is NOT a finding of no adverse history — it is the absence of a search."* The `ifsca` item says the same in its own terms: an empty scrape is explicitly not reported as a negative result.
+
+#### The SEBI residual is `analyst_answerable`, not blocked
+
+Both SEBI checks run. When `sebi_registration_active` still lands `unavailable`, it is for a **structural** reason, not a network one, and it routes to §6.2's attestation flow rather than here:
+
+> SEBI registers the AIF **trust**, not the manager and not the scheme. Searching the fund name returns "no records" for a legitimately registered fund, so **absence is never an adverse finding** — the strongest outcome from a scheme-name miss is `unavailable`. What closes it is the **trust name**, which appears in the PPM rather than in a marketing deck. `unblock_owner: manual_analyst_check`.
+
+This is the one case where an analyst genuinely can resolve a diligence gap at their desk, and putting it behind the no-affordance wall would tell them otherwise. The prompt should name what is wanted: *"Which trust is this scheme registered under? It's in the PPM."* See `03-criteria.md`, structural limit under CR-0001.
 
 ### 6.4 Answered-question rendering
 
@@ -431,7 +439,7 @@ Contested findings get a **distinct visual treatment** — split-card, both verd
 | **Upload a document** | document_answerable | Scoped upload flow |
 | **I can answer this myself** | document_answerable | Converts to attestation form |
 | **Save attestation** | analyst_answerable | Validates answer + source, records analyst-attested answer |
-| **Request Indian-egress run** | externally_blocked | Queues a re-run tagged for an Indian egress worker. `[TODO: PRD 02 does not currently model egress-tagged workers. Confirm whether this is a worker capability tag or a manual ops request.]` |
+| **Supply the trust name** | analyst_answerable | SEBI-residual only. Opens the attestation form pre-scoped to the trust name from the PPM, which is what completes the registration check (§6.3). **Replaced "Request Indian-egress run" on 2026-07-21** — that CTA existed only to serve a geo-fence that did not exist (overview §8a), and shipping it would have offered analysts a button that fixed nothing |
 | **Add to Asks list** | externally_blocked | Appends to §10 Asks for the manager |
 | **Assign to…** | externally_blocked | Assigns to a user who can unblock; emits a task/notification |
 | **Mark as handled outside the system ▾** | externally_blocked | Records that the check was done elsewhere, with a required note and the outcome. Does **not** mark the criterion evaluated |
@@ -496,7 +504,7 @@ Contested findings get a **distinct visual treatment** — split-card, both verd
 
 1. **PRD 07 field contract.** This spec assumes `unresolved[].kind ∈ {document_answerable, analyst_answerable, externally_blocked}` and `suggested_document_type`. The reference artifact `04-scoring.json` carries `unresolved` as **flat strings with no kind field** — the classification currently exists only in the overview's prose. PRD 07 must define the field, and the engine must emit it. Until then, kind is derivable only by heuristics over the item text, which is not good enough to route UI on.
 2. **The 12-of-49 figure.** The overview says "many resolve from a PPM" and this spec renders "12 of 49". 12 is a derived count over items whose text points at a PPM or names a PPM-carried term (`gp_commitment`, `key_person_clause`, `valuation_policy`, `realised_dpi`, `named_fund_investors`, `first_close_status`, fee basis, waterfall, concentration caps, minimum commitment, IC membership, distribution mechanics). **Confirm the count and its derivation rule with the engine before it appears in the UI as a promise.**
-3. **Indian-egress re-runs.** PRD 02 models workers but not egress capability tags. Is "re-run from an Indian IP" a worker tag, a separate deployment, or a manual ops request outside the system?
+3. ~~**Indian-egress re-runs.**~~ **CLOSED 2026-07-21 — the question was based on a false premise.** It asked whether "re-run from an Indian IP" should be a worker capability tag. SEBI was never geo-fenced (overview §8a), no source in the register set needs a specific egress, and PRD 02 does not need egress-tagged workers. IFSCA's `needs_browser` blocker is a genuine worker-capability question, but that is about a headless browser, not a location.
 4. **Attestation and the engine.** Does an analyst attestation enter the next run as an input the engine reasons over, or only as an annotation displayed alongside? These are very different products. This spec assumes the former (it is what makes the loop a loop), but PRD 07 must state it.
 5. **Override vs answer.** Both record human judgement against a finding. Is an override just an answer to a question the engine did not ask? Keeping them separate may be duplicating a concept.
 6. **Section 11 in a 200-item memo.** 49 items is readable. A PPM run could produce several hundred. Does §11 need its own pagination or a separate workspace at some threshold — and does that break the "never collapsed" rule that makes it valuable?

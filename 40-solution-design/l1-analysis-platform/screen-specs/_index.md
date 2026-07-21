@@ -137,7 +137,7 @@ Each spec carries its own list. These are the ones that cut across several:
 2. **"12 of 49 resolve from a PPM"** appears in the memo reader as a headline promise. The count is derived by this spec, not by the engine, and has never been validated against a real PPM run. **Validate before it ships as a promise.**
 3. **Attestations: input or annotation?** (C2)
 4. **Single-criterion dry-run** (C5).
-5. **Indian-egress re-runs.** Three specs offer "request a re-run from an Indian IP" for the six blocked checks. PRD 02 does not model egress-tagged workers. Worker capability tag, separate deployment, or manual ops request?
+5. ~~**Indian-egress re-runs.**~~ **CLOSED 2026-07-21 — false premise.** Three specs offered "request a re-run from an Indian IP" for six blocked checks, on the basis that SEBI was geo-fenced. It never was (overview §8a); the CTA has been removed from all three specs and the prototype. No source in the register set needs a specific egress, so PRD 02 does not need egress-tagged workers. IFSCA's browser requirement is a genuine worker-capability question, but that is a headless browser, not a location.
 6. **Analyst visibility scope** — whole book or own deals only? Affects the deal list's default and "My Deals" reason for existing.
 7. **§11 at scale.** 49 items is readable; a PPM run could produce several hundred. Does §11 need pagination or its own workspace — and does that break the "never collapsed" rule that makes it valuable?
 8. **Override vs answer.** Both record human judgement against a finding. Keeping them as separate concepts may be duplication.

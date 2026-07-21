@@ -453,13 +453,15 @@ And for an attestation, where the provenance must differ visibly:
 | `FLIPPED_TO_NOT_FIRED` | `FIRED` → `NOT_FIRED` | A concern was resolved by new information |
 | `BECAME_CONTESTED` | `FIRED`/`NOT_FIRED` → `CONTESTED` | Lenient and strict passes now disagree where they previously agreed. **Often a sign the new evidence is ambiguous rather than clarifying** |
 | `CONTEST_RESOLVED` | `CONTESTED` → `FIRED`/`NOT_FIRED` | Evidence settled a disagreement. The most satisfying delta type and the rarest |
-| `BECAME_EVALUABLE` | `VETO_UNEVALUATED` → `FIRED`/`NOT_FIRED` | **An external source became reachable.** This is what the Indian egress IP produces, and it will arrive in a batch across the whole book |
+| `BECAME_EVALUABLE` | `VETO_UNEVALUATED` → `FIRED`/`NOT_FIRED` | **An external source became evaluable.** Arrives in a batch across the whole book — a procured data feed, a fixed adapter, or a corrected blocker diagnosis all produce it |
 | `BECAME_UNEVALUABLE` | `FIRED`/`NOT_FIRED` → `VETO_UNEVALUATED` | A source that worked stopped working. An operational alarm, not an analytical result |
 | `CRITERION_ADDED` | `ABSENT` → any | The criteria set changed. **Not caused by evidence** — see §4.4 |
 | `CRITERION_REMOVED` | any → `ABSENT` | Same |
 | `EVIDENCE_STRENGTHENED` | same state, different evidence | Same verdict, better grounds |
 
-`BECAME_EVALUABLE` deserves its own note. On the reference case, `CR-0001` and `CR-0002` are both `VETO_UNEVALUATED` because SEBI is unreachable. The day an Indian egress IP is provisioned, the next re-run of every deal in the book produces this delta — and for `CR-0001`, a **CRITICAL veto** criterion, the result could be `FIRED`, which changes a recommendation to `VETOED`. **A diff view must render a veto becoming evaluable as the most prominent thing on the screen.** It is not one row among nine.
+`BECAME_EVALUABLE` deserves its own note, and it has now happened for real. On the pre-2026-07-21 reference case, `CR-0001` and `CR-0002` were both `VETO_UNEVALUATED` because SEBI was believed unreachable. **It was not** — the diagnosis was wrong (overview §8a), and correcting the engine made both checks run. The next re-run of every deal in the book produces this delta, and for `CR-0001`, a **CRITICAL veto** criterion, the result could be `FIRED`, which changes a recommendation to `VETOED`. **A diff view must render a veto becoming evaluable as the most prominent thing on the screen.** It is not one row among nine.
+
+This case also shows why the delta type is named for the *effect*, not the cause. The trigger here was neither new evidence nor new infrastructure but **a corrected mistake** — a category nobody enumerated in advance. `BECAME_EVALUABLE` absorbed it without a schema change, because it describes what the reader sees rather than what ops did.
 
 ### 4.3 Attribution, and being honest about it
 

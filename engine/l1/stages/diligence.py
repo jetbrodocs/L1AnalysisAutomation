@@ -88,14 +88,21 @@ CHECK_TO_BLOCKER = {
     "mca_master_data": ("login_required", "procurement"),
     # VERIFIED: 403/timeout to plain HTTP; works in a real browser. A person can
     # do this by hand today, so it is the analyst's to unblock, not infra's.
-    "corporate_identity": ("paid_source", "manual_analyst_check"),
+    #
+    # `needs_browser` rather than `paid_source`: nothing here has to be BOUGHT.
+    # The distinction is load-bearing because the class names the remedy —
+    # `paid_source` routes to procurement and a purchase order, `needs_browser`
+    # routes to a rendering capability we could add. Mislabelling a solvable
+    # engineering gap as a purchasing one is how it stays unsolved.
+    "corporate_identity": ("needs_browser", "manual_analyst_check"),
     # VERIFIED: HTTP 200 with the table shell and zero populated rows, because the
-    # directory renders client-side. Also browser-only.
-    "ifsca_gift_city_registration": ("paid_source", "manual_analyst_check"),
+    # directory renders client-side. The empty table is indistinguishable from a
+    # legitimate "no match", which is why this can never become a negative finding.
+    "ifsca_gift_city_registration": ("needs_browser", "manual_analyst_check"),
     # These two are comparisons that depend on the corporate filing above, so they
     # inherit its blocker.
-    "registered_address_matches_hq": ("paid_source", "manual_analyst_check"),
-    "key_persons_appear_in_filings": ("paid_source", "manual_analyst_check"),
+    "registered_address_matches_hq": ("needs_browser", "manual_analyst_check"),
+    "key_persons_appear_in_filings": ("needs_browser", "manual_analyst_check"),
 }
 
 CHECK_TO_CRITERIA = {

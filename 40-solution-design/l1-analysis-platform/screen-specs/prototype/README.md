@@ -234,20 +234,27 @@ coloured** — because the difference between them *is* structural:
 
 The dotted edge is a broken line for a broken route. Every blocked item carries a slate notice
 reading *"This check could not be performed. Nothing you can type or upload will resolve it,"*
-followed by an **unblock list** (`→ Re-run from an Indian IP`, `→ Route through a licensed
-provider`) that routes to an **owner**, never a text field.
+followed by an **unblock list** (`→ Route through a licensed provider`, `→ Supply the trust name
+from the PPM`) that routes to an **owner**, never a text field.
 
 The band opens with the statement that makes the rule legible without alarm:
 
 > **There is no answer field on any item in this band.** That is deliberate. Inviting an analyst to
-> type an answer to a geo-fenced register check is a broken affordance — it would produce an
+> type an answer to a login-walled register check is a broken affordance — it would produce an
 > unsourced assertion where a register lookup belongs.
 >
 > **Absence of a check is not a finding.** None of these is a finding of no adverse history — each
 > is the absence of a search.
 
-Owner tallies (Infrastructure 10, Analyst 5, Procurement 3) appear in the band head and on the index,
-so "do not ask the manager" always arrives with the answer to "then who?".
+Owner tallies (Analyst 5, Procurement 3) appear in the band head and on the index, so "do not ask
+the manager" always arrives with the answer to "then who?".
+
+> **Corrected 2026-07-21.** The Infrastructure owner and the `→ Re-run from an Indian IP` route were
+> removed. They existed to serve a SEBI geo-fence that **did not exist** (overview §8a) — SEBI
+> returns HTTP 530 to a default curl user-agent and HTTP 200 to a browser one, ordinary bot
+> filtering. Both SEBI checks now run for real. The two SEBI cards remain in the band, re-pointed at
+> their genuine residual: SEBI registers the AIF **trust**, not the scheme, so verifying registration
+> needs the trust name from the PPM — an analyst check, not an infrastructure ticket.
 
 Scale is handled by a **bulk affordance first** (*"32 of these 36 name the PPM as the typical
 source — upload one and re-run"*), a kind-jump nav, and stage subheads. The count with an affordance

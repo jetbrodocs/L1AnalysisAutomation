@@ -89,15 +89,16 @@ Two modes on one screen: **Chain** (default) and **Compare**. Chain answers "wha
 │         HOLD                          Open questions  49                               │
 │         red 11.0 / green 1.0          Evidence  1 document (52pp), 104 citations      │
 │         Criteria CS-2026-0001 (DRAFT — unversioned) ⚠                                 │
-│         2 vetoes UNEVALUATED (CR-0001, CR-0002 — SEBI register geo-fenced)            │
+│         2 vetoes UNEVALUATED (CR-0001, CR-0002 — SEBI checks not yet run)             │
 │         Triggered by: document promotion, run fd33c73e                                 │
 │         [Open memo]  [Download ↓]                                                      │
 │                                                                                       │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 
-  ⚠ CR-0001 and CR-0002 remain UNEVALUATED across all three versions.
-    The SEBI register has been unreachable from this network on every run.
-    Nothing an analyst uploads or types resolves these.   [Why] [Request Indian-egress run]
+  ✓ CR-0001 and CR-0002 became EVALUABLE in v4 (2026-07-21).
+    The SEBI register was reachable all along — the earlier "unreachable"
+    reading was a misdiagnosis, corrected in the engine. Both checks now run.
+    This is a BECAME_EVALUABLE delta and outranks every other row.   [Why] [Compare v3 → v4]
 ```
 
 Each node carries the five things the brief requires — **date, recommendation, open-question count, evidence added** — plus the criteria set, because a recommendation that moved because the *rules* changed is a categorically different event from one that moved because the *evidence* changed, and conflating them is the failure mode this screen exists to prevent.
@@ -137,7 +138,7 @@ The memo is **twelve section files** (PRD 06 §3), so the diff unit is a section
 │  │    "all returns are presented on a 'gross' basis".                               │ │
 │  │                                                                                   │ │
 │  │  ⚠ CR-0001, CR-0002                       UNEVALUATED → UNEVALUATED              │ │
-│  │    Cause: unchanged — SEBI register unreachable from this egress on both runs.   │ │
+│  │    Cause: unchanged — the SEBI checks did not run on either version.             │ │
 │  │    Not a change, and not a clearance.                                            │ │
 │  └───────────────────────────────────────────────────────────────────────────────────┘ │
 │                                                                                       │
@@ -279,7 +280,7 @@ For each finding whose state changed between vN−1 and vN, the diff classifies 
 | **Show them** (unattributed) | Filters to unexplained flips |
 | **Export ▾** | `Comparison as PDF`, `Comparison as markdown`, `Version chain summary (one page)`. The chain summary is the artefact an IC paper wants: how the view evolved, on one page |
 | **Why** (unevaluable footer) | Opens the blocking-reason detail for CR-0001 / CR-0002 |
-| **Request Indian-egress run** | Same as Memo Reader §7.5 — queues a re-run tagged for Indian egress. `[TODO: PRD 02 does not model egress-tagged workers.]` |
+| **Compare v3 → v4** | Opens the diff scoped to the `BECAME_EVALUABLE` rows. **Replaced "Request Indian-egress run" on 2026-07-21** — that CTA served a geo-fence that did not exist (overview §8a). What an analyst wants at this point is not a re-run request but to see what the newly-evaluated vetoes said |
 | **Re-run now** | Available when answers are pending; produces the next version |
 | **Restore this version** | **Deliberately absent.** Versions are a chain, not a branch — there is nothing to restore to. If an analyst wants v1's answer they read v1, which stays frozen and downloadable |
 

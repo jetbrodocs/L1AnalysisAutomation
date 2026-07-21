@@ -30,7 +30,7 @@ Admin email domain: [TODO — confirm with stakeholder]
 
 ### Process: Closing the Analysis Gaps
 
-The engine's honesty is its most expensive property. On the reference case — a real 52-page SEBI Category II AIF deck — the engine reported **49 open items** in memo section 11: one from classification, eleven from extraction, six from diligence, thirty-one from scoring. Every one is a real gap, stated with what was searched and why nothing was found. PRD 05 §1 defends section 11 from being collapsed, hidden, or greyed out. This module is what happens after the analyst has read it.
+The engine's honesty is its most expensive property. On the reference case — a real 52-page SEBI Category II AIF deck — the engine reported **49 open items** in memo section 11: one from classification, eleven from extraction, six from diligence, thirty-one from scoring. (Counts are from the reference run at `/tmp/l1-v3`, which predates the 2026-07-21 SEBI correction; the totals hold, the diligence *routing* changed — see §3.) Every one is a real gap, stated with what was searched and why nothing was found. PRD 05 §1 defends section 11 from being collapsed, hidden, or greyed out. This module is what happens after the analyst has read it.
 
 Because a section 11 of 49 items is, on its own, a wall. It is a correct wall — it is what the document actually failed to establish — but a co-pilot that hands an analyst forty-nine identical-looking bullet points and no route through them has converted honesty into an obstacle. The gap between "the engine told you the truth" and "the engine helped you" is entirely in the routing.
 
@@ -39,12 +39,14 @@ Because a section 11 of 49 items is, on its own, a wall. It is a correct wall �
 | Kind | What closes it | Reference-case examples | Count |
 |---|---|---|---|
 | **`DOCUMENT_ANSWERABLE`** | Uploading another document — most often the PPM | `gp_commitment`, `team.key_person_clause`, `valuation_policy`, `first_close_status`, `fund_terms.minimum_commitment`, `portfolio_construction.concentration_limits` | ~12 of 49 |
-| **`ANALYST_ANSWERABLE`** | The analyst typing what they know, with a source | `team.investment_committee` (no IC member named anywhere; known from a call), `portfolio_construction.geography` (deduced, not stated) | ~31 of 49 |
-| **`EXTERNALLY_BLOCKED`** | Nothing the analyst can do at their desk | `sebi_registration_active`, `sebi_enforcement_actions`, `mca_master_data`, `ifsca_gift_city_registration`, plus two dependent comparisons | 6 of 49 |
+| **`ANALYST_ANSWERABLE`** | The analyst typing what they know, with a source | `team.investment_committee` (no IC member named anywhere; known from a call), `portfolio_construction.geography` (deduced, not stated), `sebi_registration_active` (needs the *trust* name from the PPM) | ~33 of 49 |
+| **`EXTERNALLY_BLOCKED`** | Nothing the analyst can do at their desk | `mca_master_data`, `ifsca_gift_city_registration`, plus two dependent comparisons | 4 of 49 |
 
 The document-answerable group is the one with leverage. Several of those items say so in their own text — the extraction stage recorded that **page 37 refers readers to the PPM** for exactly the terms it could not find. So a large fraction of section 11 collapses on a single action: upload the PPM. The UI must recognise this and say it: *"12 of these 49 typically resolve from a PPM — upload one?"* That sentence is the product.
 
-The externally-blocked group is the one where the UI must **not** help. `sebi_registration_active` cannot be answered by an analyst typing "yes, they're registered" — that is precisely the unverified assertion the whole grounding design exists to prevent. The engine's own text is explicit: *"This is NOT a finding of no adverse history — it is the absence of a search."* Offering an "Answer this" button next to it invites an analyst to launder a guess into the record. **These items get no answer affordance at all.** They get a reason, a named blocker, and a route to whoever can unblock them — which, for the four SEBI/MCA/IFSCA items, is an infrastructure decision (an Indian egress IP) or a licensed data provider, not a person with more knowledge.
+The externally-blocked group is the one where the UI must **not** help. `mca_master_data` cannot be answered by an analyst typing "yes, the company is active" — that is precisely the unverified assertion the whole grounding design exists to prevent. The engine's own text is explicit: *"This is NOT a finding of no adverse history — it is the absence of a search."* Offering an "Answer this" button next to it invites an analyst to launder a guess into the record. **These items get no answer affordance at all.** They get a reason, a named blocker, and a route to whoever can unblock them — which, for MCA, is a licensed data provider (`unblock_owner: procurement`), not a person with more knowledge.
+
+> **Corrected 2026-07-21.** This section previously used `sebi_registration_active` as its canonical example, on the basis that SEBI was geo-fenced and needed an Indian egress IP. **That diagnosis was wrong** (overview §8a). SEBI is reachable; both SEBI checks now run for real. MCA replaces it as the canonical example, and is a better one: MCA's blocker is a login wall plus a canvas CAPTCHA — a deliberate access control we decline to defeat on a government system — rather than a header bug that could turn out to be wrong next week.
 
 Flow:
 
@@ -227,7 +229,7 @@ On the next run, for every attestation with `attestation_verdict = SOURCED`:
 | `source_kind` | How the engine verifies |
 |---|---|
 | `ATTACHED_DOCUMENT` | The document is already in the evidence directory. The engine reads the cited page/section and checks the attested value appears there — the **same quote-verification machinery** used for the primary document (PRD 06 §7), including the three-tier `exact` / `layout` / `unverified` verdict |
-| `PUBLIC_SOURCE` | The engine fetches the locator and checks the attested value appears in the retrieved content. Subject to the same reachability limits as diligence (PRD 06 §5 stage 3) — a SEBI URL will fail from a geo-fenced egress exactly as the register checks do |
+| `PUBLIC_SOURCE` | The engine fetches the locator and checks the attested value appears in the retrieved content. Subject to the same reachability limits as diligence (PRD 06 §5 stage 3) — an MCA URL will fail behind its login wall exactly as the master-data check does |
 
 This produces a **verification outcome the analyst does not control**:
 
@@ -350,28 +352,40 @@ Design against the real output, not an invented one. The reference run (`/tmp/l1
 |---|---|---|---|---|
 | Classification | 1 | 0 | 1 (`sebi_registration_number` — the *document's* omission) | 0 |
 | Extraction | 11 | 8 | 3 | 0 |
-| Diligence | 6 | 0 | 0 | **6** |
+| Diligence | 6 | 0 | 2 (the two SEBI residuals — see below) | **4** |
 | Scoring | 31 | 4 | 21 | 6 (all deduplicated into the diligence six by rule 2) |
-| **Total rows created** | **49** | **12** | **25** | **6** + 6 duplicates |
+| **Total rows created** | **49** | **12** | **27** | **4** + 6 duplicates |
+
+> **Corrected 2026-07-21.** The diligence row previously read `0 / 0 / 6` — all six diligence items externally blocked. Two of those six were the SEBI checks, blocked on a geo-fence that **did not exist** (overview §8a). Those two checks now run. They still appear as items on this reference run, but as `ANALYST_ANSWERABLE` residuals (supply the trust name from the PPM), not as walls. The 49 total is unchanged because the items still exist — what changed is the *kind*, which is the only thing this module routes on.
+>
+> The 49-item total, and the 12/31 split, are from the pre-correction reference run at `/tmp/l1-v3`. **They should be recomputed against a post-fix run before any of these numbers appear in the UI as a promise** — see §11 open question 2.
 
 The scoring stage's 31 items are largely restatements of extraction and diligence gaps expressed in criterion terms — `gp_commitment` appears in extraction as a missing field and again in scoring as *"CR-0030 could not fire"*. Rule 2's deduplication applies to the diligence restatements; the extraction restatements are linked rather than merged, because *"the field is absent"* and *"the criterion could not fire as a result"* are genuinely two facts and an analyst closing the first wants to see the second close with it.
 
-### The six blocked items, exactly as they must render
+### The four blocked items, exactly as they must render
+
+*(Was six until 2026-07-21, when the two SEBI checks were found to be reachable and began running for real. Their rows are retained at the foot of the table for their residual, analyst-closable case.)*
 
 These get **no answer affordance**. Not a greyed-out one — none. The screen shows the reason and the route.
 
 | `field_path` | `blocker_class` | `unblock_owner` | What the UI says |
 |---|---|---|---|
-| `sebi_registration_active` | `NETWORK_EGRESS` | `INFRASTRUCTURE` | "SEBI's register is unreachable from this deployment's network egress — the connection is dropped after the TLS Client Hello, which is a geo-fence, not an outage. A browser does not help. Requires an Indian egress IP." |
-| `sebi_enforcement_actions` | `NETWORK_EGRESS` | `INFRASTRUCTURE` | Same block, same route. **"This is not a finding of no adverse history — it is the absence of a search."** |
-| `mca_master_data` | `AUTH_WALL` + `CAPTCHA` | `PROCUREMENT` | "MCA master data requires an authenticated account; DIN enquiry is CAPTCHA-gated on submit. These are deliberate access controls on a government system and the engine does not circumvent them. Route through a licensed data provider." |
-| `ifsca_gift_city_registration` | `CLIENT_SIDE_RENDER` | `INFRASTRUCTURE` | "The IFSCA directory renders rows client-side, so a plain fetch returns an empty table — indistinguishable from a genuine 'no match', and therefore not reported as one. Requires a browser-driven fetch." |
-| `registered_address_matches_hq` | `DEPENDENT_CHECK` | `INFRASTRUCTURE` | "Blocked by `mca_master_data`. Needs a filed registered address to compare against." |
-| `key_persons_appear_in_filings` | `DEPENDENT_CHECK` | `INFRASTRUCTURE` | "Blocked by `mca_master_data`. **This is not a finding that any named person is absent from filings.**" |
+| `mca_master_data` | `login_required` | `procurement` | "MCA master data requires an authenticated account; DIN enquiry is CAPTCHA-gated on submit. These are deliberate access controls on a government system and the engine does not circumvent them. Route through a licensed data provider." |
+| `ifsca_gift_city_registration` | `paid_source` | `manual_analyst_check` | "The IFSCA directory renders rows client-side, so a plain fetch returns an empty table — indistinguishable from a genuine 'no match', and therefore not reported as one. Needs a browser-driven fetch; a person can do it by hand today." |
+| `registered_address_matches_hq` | `paid_source` | `manual_analyst_check` | "Blocked by the corporate filing check. Needs a filed registered address to compare against." |
+| `key_persons_appear_in_filings` | `paid_source` | `manual_analyst_check` | "Blocked by the corporate filing check. **This is not a finding that any named person is absent from filings.**" |
+| `sebi_registration_active` | *(none)* | `manual_analyst_check` | Residual only. The check runs. "SEBI registers the AIF **trust**, not the manager and not the scheme, so a miss on the fund name is ordinary and can never be an adverse finding. Supply the trust name from the PPM and the check completes." |
+| `sebi_enforcement_actions` | *(none)* | `manual_analyst_check` | Residual only. The enforcement search runs and discriminates. **"This is not a finding of no adverse history — it is the absence of a search."** |
 
-The two `DEPENDENT_CHECK` items are worth their own note. They are blocked *by another blocked item*, not by their own infrastructure problem — so when `mca_master_data` unblocks, they unblock automatically and no analyst action closes them individually. The screen must show the dependency (`blocked_by_question_id`, via `duplicate_of_question_id`'s sibling relationship) rather than presenting four independent walls where there are two.
+> **Corrected 2026-07-21.** The first two rows previously read `NETWORK_EGRESS` / `INFRASTRUCTURE` with the text *"the connection is dropped after the TLS Client Hello, which is a geo-fence... Requires an Indian egress IP."* **That was a misdiagnosis** (overview §8a). SEBI returns HTTP 530 to a default `curl` user-agent and HTTP 200 to a browser one — ordinary bot filtering at the HTTP layer. Both registers are server-side-rendered Struts pages needing no headless browser. The engine now queries both live, and diligence went from 7/7 unavailable to **3 passed, 4 unavailable**. `CR-0001` and `CR-0002` are genuinely evaluated for the first time, and `criteria_blocked_by_unavailable_source` is empty.
+>
+> The SEBI rows survive because a **residual gap** does — a different and narrower one. It is `manual_analyst_check`, not an infrastructure ticket: no one needs to provision anything, an analyst needs to open the PPM and read the trust name. See `03-criteria.md`, the structural-limit block under CR-0001.
+>
+> The `blocker_class` and `unblock_owner` values in this table were also realigned to the vocabulary the engine actually emits (`CHECK_TO_BLOCKER` in `engine/l1/stages/diligence.py`). The prior `NETWORK_EGRESS` / `AUTH_WALL` / `CLIENT_SIDE_RENDER` / `DEPENDENT_CHECK` names were invented in this document and never existed in the engine.
 
-**Cross-reference**: overview §8a records that three of six diligence questions are unanswerable and that `CR-0001` — a **veto** criterion — is among them. The reference run's scorecard confirms it: `veto_unevaluated` contains two entries, `CR-0001` and `CR-0002`. This module does not fix that. It makes the fact routable, attributable to a named owner, and visible as an infrastructure task rather than an analytical one.
+The two dependent items are worth their own note. They are blocked *by another blocked item*, not by their own problem — so when the corporate filing check unblocks, they unblock automatically and no analyst action closes them individually. The screen must show the dependency (`blocked_by_question_id`, via `duplicate_of_question_id`'s sibling relationship) rather than presenting four independent walls where there are two.
+
+**Cross-reference**: overview §8a's SEBI blocker is **resolved**. The reference run's `veto_unevaluated` no longer carries `CR-0001` and `CR-0002` on that basis. What remains genuinely blocked is MCA — a deliberate access control — and IFSCA's client-rendered directory. This module does not fix those. It makes each fact routable, attributable to a named owner, and visible as a procurement or analyst task rather than an analytical dead end.
 
 ---
 
@@ -678,7 +692,7 @@ Preconditions:
 Side effects:
   - `open_questions`: `status` → `BLOCKED`, `question_kind` → `EXTERNALLY_BLOCKED`, blocker fields populated
   - **Any pending attestation on this question is rejected**, and if one already exists as an Evidence Item it is marked `SUPERSEDED` with a note. An attestation on a question that turns out to be externally blocked is exactly the unverified assertion the boundary exists to prevent
-  - `blocked_question_stats`: aggregated by `blocker_class` and `unblock_owner` — **this is the report that turns 6 blocked items on one deal into "SEBI egress is blocking 2 checks on 41 deals", which is what makes it an infrastructure ticket instead of a shrug**
+  - `blocked_question_stats`: aggregated by `blocker_class` and `unblock_owner` — **this is the report that turns blocked items on one deal into "MCA's login wall is blocking 3 checks on 41 deals", which is what makes it a procurement ticket instead of a shrug**
   - `deals`: `blocked_question_count` set
 
 Projections updated:
@@ -687,7 +701,9 @@ Projections updated:
 Permissions:
   - `events:QUESTION_MARKED_BLOCKED:emit` (Analyst, Super Admin, and worker service account for the automatic path)
 
-**Unblocking is not an event in this module.** When an Indian egress IP is provisioned and SEBI becomes reachable, nothing is marked "unblocked" by hand — the next re-run's diligence stage returns `passed` or `failed` instead of `unavailable`, the `unresolved` entry does not appear, and the question auto-resolves through the ordinary path in §4. **The infrastructure fix is verified by the analysis, not asserted by a person.** A manual "unblock" button would let someone clear a blocker that is still blocking.
+**Unblocking is not an event in this module.** When a licensed MCA feed is procured and the master-data check starts returning records, nothing is marked "unblocked" by hand — the next re-run's diligence stage returns `passed` or `failed` instead of `unavailable`, the `unresolved` entry does not appear, and the question auto-resolves through the ordinary path in §4. **The fix is verified by the analysis, not asserted by a person.** A manual "unblock" button would let someone clear a blocker that is still blocking.
+
+This property was worth what it cost. When the SEBI geo-fence diagnosis turned out to be wrong on 2026-07-21 and the checks simply started working, no one had to go and un-assert anything: the next run returned `passed` and the questions closed themselves. Had "unblocked" been a hand-set flag, the wrong diagnosis would have left a trail of manual corrections behind it.
 
 ---
 
@@ -890,7 +906,7 @@ Transitions:
 
 Notes:
 - **`RESOLVED` is the only status reached by the engine rather than by a person**, and that is the design's core property. A human can attest, upload, dismiss, or block — but only a re-run that no longer reports the item can close it. Nothing in the UI marks a question resolved by hand.
-- **`BLOCKED` is not terminal.** An infrastructure fix makes it resolvable, through the ordinary re-run path (§4). Modelling it as terminal would mean provisioning an Indian egress IP left forty-one deals permanently marked blocked.
+- **`BLOCKED` is not terminal.** Procuring a data feed — or discovering the blocker was never real — makes it resolvable through the ordinary re-run path (§4). Modelling it as terminal would mean a licensed MCA feed left forty-one deals permanently marked blocked. The SEBI correction of 2026-07-21 is the live proof: a blocker that evaporated on re-diagnosis, with no manual cleanup required.
 - `DISMISSED` is not terminal for the same reason and additionally because a dismissal in v2 must survive into v3 with its note.
 - `EVIDENCE_PENDING → OPEN` is the honest outcome that a naive design would hide: the analyst uploaded the PPM, the engine re-read everything, and **the PPM did not contain the answer either.** The question comes back with `carried_forward_count` incremented. Silently leaving it `EVIDENCE_PENDING` would show a worklist that never empties and never explains why.
 - There is no `RESOLVED → OPEN` transition. A resolved question that reappears in a later version is a **new row** in that version carrying the prior `first_raised_version` — because the thing that resolved it may have been superseded, and rewriting history on an immutable prior version is not available to us.
@@ -970,7 +986,9 @@ Notes:
 
 ### Notes on reports 3, 6 and 7
 
-**Report 3 (`blocked_question_stats`) is the most valuable report in this module and the least obvious.** On one deal, six blocked items look like six annoyances. Aggregated across the book, they become one sentence with a budget attached: *"SEBI's register has been unreachable since 2026-07-14, blocking 2 diligence checks and 2 veto-tier criteria on 41 deals. Owner: infrastructure. Fix: Indian egress IP."* Overview §8a records this as `[NEEDS DECISION]`; this report is what turns it from a note in a PRD into a tracked operational item with a measurable cost. It should be visible on the Super Admin dashboard, not buried in a per-deal screen.
+**Report 3 (`blocked_question_stats`) is the most valuable report in this module and the least obvious.** On one deal, four blocked items look like four annoyances. Aggregated across the book, they become one sentence with a budget attached: *"MCA master data has been behind a login wall on every run since 2026-07-14, blocking 3 diligence checks on 41 deals. Owner: procurement. Fix: licensed data provider."* This report is what turns it from a note in a PRD into a tracked operational item with a measurable cost. It should be visible on the Super Admin dashboard, not buried in a per-deal screen.
+
+**A second use, learned the hard way.** This report is also the cheapest place to notice that a blocker diagnosis is *wrong*. A source blocking every check on every deal for weeks, with a mechanism story nobody has re-tested, is exactly the shape the SEBI misdiagnosis had (overview §8a). An aggregate view invites the question "has anyone actually re-checked this?" that a per-deal view never prompts. Blocked-source rows should carry the date the blocker was last empirically verified, not just the date it was first observed.
 
 **Report 6 (`evidence_effectiveness_stats`) is how the product learns whether its own central claim is true.** The claim in §1 is that uploading a PPM closes a large fraction of open questions. That is a hypothesis derived from one deck. This report measures it: PPM uploads, average questions closed, cost per question closed. If PPMs close two questions each at $3 a re-run, the *"upload a PPM?"* prompt is the wrong prompt and the product should say something else.
 
@@ -1180,7 +1198,7 @@ Distinct from exit 30 (invalid input) because the operator response differs: exi
 
 This process does not involve physical locations. Events will not carry a `location_id`.
 
-The one place a location-like concept appears is `blocker_class = NETWORK_EGRESS` and its resolution — an Indian egress IP. That is a network topology fact about the *deployment*, recorded on `blocked_question_stats` as `external_source` plus `unblock_owner`, and it must not be modelled as a Phlo Location. Phlo locations exist for access filtering over physical sites (architecture doc); a network egress point is not one, and the same reasoning PRD 02 §8 applies to worker hostnames applies here.
+A location-like concept could arise if a blocker were ever genuinely about where a run originates. None currently is — the `NETWORK_EGRESS` blocker this section previously described was the SEBI geo-fence, which **did not exist** (overview §8a, corrected 2026-07-21). The rule is recorded anyway because it is the right rule if such a blocker ever appears: network egress is a topology fact about the *deployment*, recorded on `blocked_question_stats` as `external_source` plus `unblock_owner`, and it must not be modelled as a Phlo Location. Phlo locations exist for access filtering over physical sites (architecture doc); a network egress point is not one, and the same reasoning PRD 02 §8 applies to worker hostnames applies here.
 
 ---
 
@@ -1217,7 +1235,7 @@ The one place a location-like concept appears is `blocker_class = NETWORK_EGRESS
 
 **Screen 7 (Re-Run Analysis)** must state four things before the button: what evidence is in the bundle (all of it, cumulative, not just the new items), the estimated cost with the observed range rather than a point estimate ($2–$4 per PRD 06 §7, not "$2.80"), which criteria set version will apply — **which may differ from the one that scored v1**, and that v{n} will be frozen and remain downloadable. The criteria-set line is the one most likely to be omitted and the most likely to cause a surprise: a re-run under a newer criteria set produces findings that changed for reasons that have nothing to do with the evidence, and PRD 08's diff has to disentangle the two.
 
-**Screen 8 (Blocked Items)** is the screen that converts an analytical dead end into an operational task. Grouped by `blocker_class` and `unblock_owner`, with deal counts and criteria counts, and a "Copy summary" that produces the paragraph an infrastructure engineer needs. Overview §8a's `[NEEDS DECISION]` on the Indian egress IP is exactly what this screen is for.
+**Screen 8 (Blocked Items)** is the screen that converts an analytical dead end into an operational task. Grouped by `blocker_class` and `unblock_owner`, with deal counts and criteria counts, and a "Copy summary" that produces the paragraph a procurement owner needs. MCA's login wall — `login_required` / `procurement`, blocking three checks on every Indian deal — is exactly what this screen is for. It must also show, per source, **when the blocker was last empirically verified**, for the reason given in §6.
 
 ### Palette-Searchable Entities
 
@@ -1319,11 +1337,15 @@ They are not compatible: PRD 05's is a section-level and metric-level diff keyed
 
 ### 12.5 The `unavailable`-never-fails policy plus a veto criterion produces a memo that can never be complete
 
-PRD 06 §5 stage 3 decides that an unreachable source never fails the run, **even for veto-tier criteria**, and the reference run confirms the consequence: `CR-0001` (no verifiable SEBI registration, **CRITICAL veto**) and `CR-0002` are both `veto_unevaluated`. Overview §8a records that three of six diligence checks are currently unanswerable and calls `CR-0001` "not a peripheral gap."
+> **Substantially revised 2026-07-21.** This section formerly argued that the `unavailable`-never-fails policy plus two SEBI-dependent vetoes meant **no complete analysis of an Indian AIF was ever possible from this deployment** — a permanent hole in the veto tier, constraining what could be claimed commercially. That argument rested entirely on SEBI being geo-fenced. **It was not** (overview §8a). Both vetoes are now genuinely evaluated. The conclusion below is what survives once the false premise is removed, and it is a narrower and more ordinary claim.
 
-The policy is right — a partial memo beats no memo. But this module surfaces what it means end to end: **no amount of evidence gathering can produce a complete analysis of an Indian AIF from this deployment.** An analyst can upload the PPM, attest to every fact they know, run v2 and v3, and section 11 will still carry two unevaluated vetoes. Every IC packet ships with that hole in it, permanently, until the infrastructure changes.
+PRD 06 §5 stage 3 decides that an unreachable source never fails the run, **even for veto-tier criteria**. The policy is right — a partial memo beats no memo, and failing a run because one lookup timed out would discard sixteen good evaluations.
 
-This is not an inconsistency in the sense of a contradiction — it is a consequence that no document currently states plainly. It affects what can be claimed about the product. **Needs**: overview §8a's `[NEEDS DECISION]` on the Indian egress IP should be re-graded. It is not an enhancement; it is the difference between "the analysis has gaps you can close" and "the analysis has a permanent hole in its veto tier." Report 3 in §6 is designed to make the cost of not deciding it visible.
+The residual consequence is real but bounded. `CR-0001` can still land `unevaluated` on a given deal — not because SEBI is unreachable, but because **SEBI registers the AIF trust rather than the manager or the scheme**, so a search on the fund name legitimately returns nothing (`03-criteria.md`, structural limit under CR-0001). That is closable: an analyst reads the trust name out of the PPM and the check completes. It is `unblock_owner: manual_analyst_check`, which is precisely the case this module's evidence loop is built for — a gap an analyst can close with an upload, not a wall.
+
+**What this module should do about it**: treat a `CR-0001` unevaluated-for-trust-name as a **document-answerable prompt**, not a blocked item. The question is effectively *"which trust is this scheme registered under?"* and the PPM answers it. Routing it to the blocked list would tell an analyst there is nothing they can do, when in fact they are the only one who can.
+
+**Lesson retained**: the version of this section written before 2026-07-21 was confident, detailed, and wrong, and its wrongness came entirely from inheriting an upstream diagnosis without testing it. A document that reasons carefully from a false premise reaches a false conclusion carefully.
 
 ### 12.6 PRD 05's `MEMO_FINDING_OVERRIDDEN` and this module's `QUESTION_ANSWERED` will be confused by users
 
@@ -1350,14 +1372,14 @@ flowchart TD
     A["L1_MEMO_GENERATED<br/>(PRD 02)"] --> B["AnalysisVersion v1 CURRENT<br/>49 OpenQuestions created"]
     B --> C{"Classify each<br/>question (§2.3)"}
 
-    C -->|"rule 1/2: diligence<br/>or restatement"| D["EXTERNALLY_BLOCKED<br/>6 items<br/>QUESTION_MARKED_BLOCKED"]
+    C -->|"rule 1/2: diligence<br/>or restatement"| D["EXTERNALLY_BLOCKED<br/>4 items<br/>QUESTION_MARKED_BLOCKED"]
     C -->|"rule 3/4: PPM pointer<br/>or field map"| E["DOCUMENT_ANSWERABLE<br/>12 items"]
     C -->|"rule 5: everything else"| F["ANALYST_ANSWERABLE<br/>31 items"]
 
     D --> D1["No answer affordance.<br/>Reason + owner shown.<br/>→ Blocked Items dashboard"]
-    D1 --> D2{"Infrastructure<br/>fixed?"}
+    D1 --> D2{"Source<br/>unblocked?"}
     D2 -->|"No"| D1
-    D2 -->|"Yes — Indian egress IP"| M
+    D2 -->|"Yes — licensed MCA feed"| M
 
     E --> E1["'12 of these 49 resolve<br/>from a PPM — upload one?'"]
     E1 -->|EVIDENCE_UPLOADED| G["EvidenceItem<br/>PENDING_RERUN"]

@@ -30,7 +30,17 @@ from .errors import InvariantViolation
 
 KINDS = ("DOCUMENT_ANSWERABLE", "ANALYST_ANSWERABLE", "EXTERNALLY_BLOCKED")
 TYPICAL_SOURCES = ("ppm", "audited_accounts", "ddq", "side_letter")
-BLOCKER_CLASSES = ("geo_fence", "login_required", "captcha", "paid_source")
+# Why a check could not be performed. The class names the REMEDY, which is the
+# point: `paid_source` routes to procurement, `needs_browser` routes to an
+# engineering capability, `login_required` and `captcha` route to a deliberate
+# access control we will not defeat. Mislabelling a solvable engineering gap as
+# a purchasing one is how it stays unsolved.
+#
+# `geo_fence` was removed 2026-07-21. It existed for exactly one case — SEBI —
+# and that diagnosis was wrong: SEBI's Cloudflare rejects a default user-agent
+# and returns HTTP 200 to a browser one. Keeping a class with no true instance
+# invites its reuse for the next thing that merely looks like it.
+BLOCKER_CLASSES = ("needs_browser", "login_required", "captcha", "paid_source")
 UNBLOCK_OWNERS = ("infrastructure", "procurement", "manual_analyst_check")
 
 # Human-readable labels, used by the memo and by `l1 inspect`. Defined once so

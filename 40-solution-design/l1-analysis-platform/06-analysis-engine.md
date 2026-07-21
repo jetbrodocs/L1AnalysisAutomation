@@ -2,7 +2,7 @@
 title: "PRD 06 — Analysis Engine (Standalone CLI)"
 status: draft
 created: 2026-07-20
-updated: 2026-07-20
+updated: 2026-07-21
 tags: [prd, cli, engine, product-a, pipeline]
 ---
 
@@ -248,7 +248,7 @@ Every run records, per stage and in total:
 | `engine_git_sha` | Which build produced this. `engine_version` alone is too coarse |
 | `criteria.version` resolution | Already present; when null, `run.json` states **`"criteria_status": "DRAFT"`** explicitly rather than leaving null to be interpreted |
 | `evidence` block | For re-runs: attestation count, verification outcomes (`confirmed` / `contradicted` / `unreachable`), evidence document hashes |
-| `environment.egress_country` | Best-effort. The SEBI geo-fence (overview §8a) makes "where did this run from" a first-class diagnostic — the same run from an Indian IP produces materially different diligence results |
+| `environment.egress_country` | Best-effort. Recorded because "where did this run from" is a cheap thing to capture and an expensive thing to reconstruct later. **Not** because any source is known to be geo-fenced — the SEBI geo-fence that originally justified this field did not exist (overview §8a, corrected 2026-07-21). Had this field been populated and read at the time, it would have shown `IN` and killed the misdiagnosis on the spot |
 | `page_extraction_method` | `text_layer` / `ocr` / `mixed`. Governs how much extraction output can be trusted |
 
 **Standalone consequence** (§0): all of this lands in `run.json` on disk, so a CLI-only user gets the same telemetry. `l1 inspect <output-dir>` renders it as a human-readable summary. Phlo reads the same file into projections for cross-run reporting; it does not compute anything the CLI cannot.
@@ -312,7 +312,7 @@ Each entry is therefore an object:
 | `stage_origin` | Which stage could not resolve it |
 | `account` | The search account — what was looked for, where, and what was found instead. This is the prose that previously *was* the entry. |
 | `typical_source` | For `DOCUMENT_ANSWERABLE`: which document class usually answers it (`ppm`, `audited_accounts`, `ddq`, `side_letter`) |
-| `blocker_class` | For `EXTERNALLY_BLOCKED`: `geo_fence`, `login_required`, `captcha`, `paid_source` |
+| `blocker_class` | For `EXTERNALLY_BLOCKED`: `login_required`, `captcha`, `paid_source`. (`geo_fence` was listed here until 2026-07-21 on the strength of the SEBI misdiagnosis; no source in the register set is geo-fenced, and the value is not emitted — see overview §8a) |
 | `unblock_owner` | For `EXTERNALLY_BLOCKED`: who can resolve it — `infrastructure`, `procurement`, `manual_analyst_check` |
 | `criterion_codes` | Which criteria this gap affected, if any |
 
@@ -430,7 +430,7 @@ Deterministic comparisons — not model judgements:
 
 | Check | Method |
 |---|---|
-| SEBI registration exists and is active | Register lookup by manager name |
+| SEBI registration exists and is active | Register lookup by **trust** name — not the manager and not the scheme, which are not registrants. A miss is `unavailable`, never `failed` |
 | Registered address matches stated HQ | String comparison, normalised |
 | AUM within tolerance of filed figure | Numeric band comparison |
 | Named key persons appear in filings | Name matching against director records |
@@ -438,11 +438,28 @@ Deterministic comparisons — not model judgements:
 
 **This stage degrades gracefully.** If a source is unreachable, the check is recorded as `unavailable` with a reason — never as `passed`. `unavailable` and `passed` must never be conflated.
 
+#### Source reachability, as verified (2026-07-21)
+
+| Source | Status | Note |
+|---|---|---|
+| **SEBI** AIF register, enforcement orders | ✅ **Queried live** | Server-side-rendered Struts pages. No JS, no CAPTCHA, no headless browser. Requires a **browser `User-Agent`** — the default `curl`/`urllib` UA gets HTTP 530 from Cloudflare, a browser UA gets HTTP 200 |
+| **ZaubaCorp** corporate identity | ✅ Working | Needs the full browser header set, not the user-agent alone |
+| **MCA** master data | ❌ `login_required` | Login wall plus a canvas CAPTCHA on submit. **Deliberately out of scope** — the engine does not defeat access controls on government systems. Route to a licensed provider (`unblock_owner: procurement`) |
+| **IFSCA** directory | ❌ `needs_browser` | Client-rendered; plain HTTP returns an empty table indistinguishable from a legitimate "no match", so it is never reported as one |
+
+Result on the reference case: **3 passed, 4 unavailable** — up from 7/7 unavailable. `CR-0001` and `CR-0002` are genuinely evaluated, and `criteria_blocked_by_unavailable_source` is empty.
+
+> **Corrected 2026-07-21.** This stage was previously documented as unable to reach SEBI at all, on the diagnosis that SEBI was **geo-fenced** and needed an India-hosted runner or VPN egress. **That was wrong.** The reasoning — "TCP connects then dies after the TLS Client Hello, therefore the block is below the HTTP layer, therefore a headless browser cannot help" — was internally coherent and false, and its control was run from the same egress it was trying to test, so it confirmed the egress rather than the hypothesis. The cheap test, changing one header, was never run. Full account in overview §8a.
+>
+> **The residual SEBI limit is real but different.** SEBI registers the AIF **trust**, not the manager and not the scheme, so searching a fund name returns "no records" for a legitimately registered fund. **Absence can therefore never be an adverse finding** — the strongest outcome from a scheme-name miss is `unavailable`. Verifying registration needs the trust name, which lives in the PPM rather than a marketing deck. That makes it `unblock_owner: manual_analyst_check`. See `03-criteria.md`, the structural-limit block under CR-0001.
+>
+> **A trap this stage must guard**, found during the fix: a SEBI POST that loses its session token returns **HTTP 200 with a page carrying neither results nor an error** — indistinguishable from an empty result set. The adapter splits parse state into `results` / `empty` / `unparseable`, and **only `empty` may become a negative finding**. A 200 is not evidence that a query ran.
+
 #### Unreachable-source policy (decided)
 
 An unreachable source **never fails the run**. The check is recorded as `unavailable`, the run continues, and the gap surfaces in memo section 11 ("What We Could Not Determine").
 
-This holds **even for veto-tier criteria**. If SEBI's register is unreachable and `CR-0001` (no verifiable SEBI registration) therefore cannot be evaluated, the engine does not fire the veto and does not fail — it records that the check could not be performed and continues. Rationale: failing the whole run discards sixteen other evaluated criteria because one lookup timed out, and an analyst is better served by a partial memo with a clearly-marked hole than by no memo at all.
+This holds **even for veto-tier criteria**. If MCA's master data is behind its login wall and a dependent criterion therefore cannot be evaluated, the engine does not fire the veto and does not fail — it records that the check could not be performed and continues. Rationale: failing the whole run discards sixteen other evaluated criteria because one lookup was blocked, and an analyst is better served by a partial memo with a clearly-marked hole than by no memo at all.
 
 The safety property that makes this acceptable is §6.3 and the `unavailable` ≠ `passed` rule: an unverified registration is never rendered as confirmed anywhere in the output.
 
@@ -711,7 +728,7 @@ attestations:
 | `source_kind` | Verification |
 |---|---|
 | `ATTACHED_DOCUMENT` | Read the cited page/section of the named document; check the value appears there using the **same quote-verification machinery as the primary document** (§7), including the three-tier `exact` / `layout` / `unverified` verdict |
-| `PUBLIC_SOURCE` | Fetch the locator; check the value appears in the retrieved content. Subject to the same reachability limits as stage 3 — a SEBI URL fails from a geo-fenced egress exactly as the register checks do |
+| `PUBLIC_SOURCE` | Fetch the locator; check the value appears in the retrieved content. Subject to the same reachability limits as stage 3 — an MCA URL fails behind its login wall exactly as the master-data check does |
 | `UNVERIFIABLE` | No verification attempted. Recorded and carried into the memo, but **cannot fire a criterion** |
 
 Each attestation gets an outcome the analyst cannot set, written into `04-scoring.json`:
@@ -784,7 +801,7 @@ LLM-as-judge only for prose quality, and only cross-family: the judge must not b
 
 ## 9. Open Questions
 
-- **Diligence sources.** SEBI, MCA21, and IFSCA registers — which are machine-accessible, which need scraping, which require paid access? This determines whether stage 3 is genuinely automatable or partly manual. Needs investigation before implementation.
+- ~~**Diligence sources.**~~ **ANSWERED 2026-07-21** — see the reachability table in §5 stage 3. SEBI and ZaubaCorp are machine-accessible over plain HTTP with browser headers; MCA needs a licensed provider; IFSCA needs a headless browser. Stage 3 is genuinely automatable for three of seven checks today.
 - **Contested findings.** When lenient and strict passes disagree, the finding is surfaced for human judgement. Is that the right default, or should a tiebreak pass run? Surfacing is more honest; tiebreaking is less work for the analyst.
 - **Page-level citation for slide decks.** Text extracted from PowerPoint-derived PDFs loses spatial layout, so a "page 37" citation may point at a slide whose meaning depends on a chart. Is page-level sufficient, or is a rendered slide image needed alongside?
 - **Multi-document funds.** When a PPM and a pitch deck both exist for the same fund, does the engine analyse them together or separately? Together is more accurate and materially more complex.

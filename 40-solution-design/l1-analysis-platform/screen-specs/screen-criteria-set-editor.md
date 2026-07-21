@@ -177,7 +177,7 @@ The checklist beneath the input is **advisory, not blocking** beyond the minimum
 | 21–79% | `✓ Discriminating` (green) | "Separates deals — no action needed." |
 | 80–99% | `⚠ Fires on almost everything` (amber) | "Fires on 5 of 6 deals. A rule that almost always fires is not discriminating — it is describing the market rather than separating within it. Consider tightening the threshold, or accept that this is a market-wide condition and lower the weight." |
 | 100% | `⚠ Always fires` (amber) | "Fired on every deal evaluated. This contributes the same weight to every score and therefore separates nothing. CR-0033 is the live example: every Indian Cat-II deck names EY, Trilegal and a bank custodian." |
-| n/a — unevaluable | `⚠ Unevaluable` (grey) | "Could not be evaluated on 2 of 6 runs because an external check was unavailable. This is a rule that depends on a source we cannot reach — see CR-0001 and CR-0002 (SEBI register, geo-fenced). The rule may be correct and still be useless from this network." |
+| n/a — unevaluable | `⚠ Unevaluable` (grey) | "Could not be evaluated on 2 of 6 runs because an external check was unavailable. This is a rule that depends on a source we could not reach — MCA master data is the standing example (login wall, `unblock_owner: procurement`). The rule may be correct and still be unrunnable here. **Before treating this as permanent, check when the blocker was last verified** — a rule can look unevaluable because a diagnosis went stale." |
 | Contested | `⚠ n contested` (amber) | "Lenient and strict readings disagreed on 3 runs. The guidance is ambiguous enough that two readings of the same words diverge. That ambiguity is fixable here. CR-0034 is the live example." |
 
 **The unevaluable and contested badges are the two most valuable and are specific to this platform.** A criterion that is never evaluable is a rule the institution cannot actually run, and no fire-rate percentage would reveal it.
@@ -276,10 +276,15 @@ Activate CS-2026-0001 as v1?
   ⚠ CS-2025-0004 is currently ACTIVE for CAT_II scope.
     Activating this set will supersede it.        [supersedes_set_id set]
 
-  ⚠ 2 criteria have never been evaluable on this network:
-    CR-0001, CR-0002 depend on the SEBI register, which is geo-fenced from
-    this egress. They will be reported UNEVALUATED on every run until that
-    changes. Activate anyway?
+  ✓ No criterion in this set is currently unevaluable.
+    CR-0001 and CR-0002 were flagged here until 2026-07-21 on the basis that
+    the SEBI register was geo-fenced. It was not. Both checks now run.
+    The blocked sources that remain (MCA, IFSCA) back no criterion directly.
+
+    Note: CR-0001 can still land UNEVALUATED on an individual deal — SEBI
+    registers the AIF trust, not the scheme, so a fund-name miss is ordinary
+    and is never an adverse finding. An analyst closes it with the trust name
+    from the PPM. That is a per-deal gap, not a rule that cannot run.
 
   ⚠ CR-0003 is flagged NEEDS REVIEW (veto for no prior track record —
     institutions that back emerging managers would find this wrong).
@@ -287,7 +292,9 @@ Activate CS-2026-0001 as v1?
   [Activate as v1]   [Cancel]
 ```
 
-Surfacing the unevaluable vetoes **at activation** is the point. An institution activating a set with two vetoes it can never evaluate should know before, not after six runs report HOLD with a caveat.
+Surfacing unevaluable vetoes **at activation** is the point. An institution activating a set with a veto it can never evaluate should know before, not after six runs report HOLD with a caveat. The check stays even though it currently finds nothing — a set with an unrunnable veto is a real failure mode, and the dialog earns its place by being empty when things are fine.
+
+**A second reason it earns its place, learned on 2026-07-21.** This dialog spent weeks warning about CR-0001 and CR-0002 on the strength of a geo-fence that did not exist (overview §8a). A warning that names its blocker and the date it was last verified invites someone to re-check it; one that says only "unevaluable" does not. **Every blocker shown here must carry `blocker last verified <date>`** — that string is the cheapest defence against a stale diagnosis hardening into an accepted constraint.
 
 ---
 
@@ -336,7 +343,7 @@ Surfacing the unevaluable vetoes **at activation** is the point. An institution 
 | **Q — Set in use by a running analysis** | A run is in flight citing this set | Info strip: "An analysis is running against this set (DL-2026-0009, started 6m ago, scoring stage). Edits won't affect it — the run holds hash `94ec11df…`." Reassures rather than blocks; hash-pinning is exactly what makes editing safe |
 | **R — Analysis running (from this screen)** | Activation triggers re-runs `[TODO: does activating a set offer to re-run affected deals? PRD 03 does not say. High-value if yes.]` | Per-stage progress per queued run, not a spinner. Runs take 8–16 min |
 | **S — Contested-heavy rule** | A criterion has contested outcomes on ≥2 runs | Inline callout on the criterion: "Lenient and strict readings disagreed on 3 of 6 runs. That ambiguity lives in this guidance text and is fixable here. [See the disagreements]" linking to each contested finding |
-| **T — Unevaluable rule** | A criterion was `unevaluated` on ≥1 run | Callout: "CR-0001 could not be evaluated on 2 runs — the SEBI intermediary register is unreachable from this network (geo-fence/WAF, verified). The rule is not wrong; the source is unavailable. [Why]" |
+| **T — Unevaluable rule** | A criterion was `unevaluated` on ≥1 run | Callout: "CR-0001 could not be evaluated on 2 runs — the SEBI register returned no match on the fund name, which is ordinary: SEBI registers the AIF **trust**, not the scheme. The rule is not wrong and this is not an adverse finding. Supply the trust name from the PPM. Owner: analyst. [Why]" Every such callout names its `unblock_owner` and the date the blocker was last verified |
 
 ---
 

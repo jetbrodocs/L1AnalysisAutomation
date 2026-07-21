@@ -566,7 +566,7 @@
       <div class="do-not-ask">
         <p class="do-not-ask__lead">There is no answer field on any item in this band.</p>
         <p>
-          That is deliberate. Inviting an analyst to type an answer to a geo-fenced register check is a
+          That is deliberate. Inviting an analyst to type an answer to a login-walled register check is a
           broken affordance — it would produce an unsourced assertion where a register lookup belongs.
           These items route to an <strong>owner</strong>, not to a text box.
         </p>
@@ -576,38 +576,40 @@
         </p>
         <div class="owner-tally">
           <span>Owners:</span>
-          <span>Infrastructure <b>10</b></span>
           <span>Analyst (manual check) <b>5</b></span>
           <span>Procurement <b>3</b></span>
         </div>
       </div>
 
-      <h3 class="stage-head">From diligence — 6</h3>
+      <h3 class="stage-head">From diligence — 6 <span style="font-weight:400;opacity:.7">(4 blocked · 2 SEBI residuals, analyst-closable)</span></h3>
 
       <article class="q q--blocked" id="sebi_registration_active">
         <h4 class="q__key">sebi_registration_active</h4>
         <p class="q__route">
-          <span>geo-fence / source-IP block</span>
-          <span class="owner">owner: Infrastructure</span>
+          <span>trust-name gap (structural)</span>
+          <span class="owner">owner: Analyst (manual check)</span>
           <span class="affects">affects CR-0001</span>
         </p>
         <div class="blocked-notice">
           <span class="blocked-notice__glyph" aria-hidden="true">□</span>
           <div>
-            <p style="margin-bottom:0.5rem"><strong>This check could not be performed. Nothing you can
-            type or upload will resolve it.</strong></p>
+            <p style="margin-bottom:0.5rem"><strong>The register was queried successfully. The gap is
+            structural, not a reachability failure.</strong></p>
             <p style="margin-bottom:0">
-              [SEBI intermediary register] <code>www.sebi.gov.in</code> is unreachable from this network
-              egress. VERIFIED empirically: DNS resolves (202.191.143.30 / .158) and TCP connect to :443
-              succeeds, but the connection is dropped after the TLS Client Hello. A real Chrome browser
-              fails identically to curl, which places the block below the HTTP layer — a geo-fence or
-              source-IP WAF rather than an outage or bot detection. A headless browser does not help.
+              [SEBI intermediary register] SEBI registers the AIF <strong>trust</strong>, not the manager
+              and not the scheme. Searching this fund's name returns &ldquo;no records&rdquo; even for a
+              legitimately registered fund, so <strong>absence can never be an adverse finding</strong> —
+              the strongest available outcome from a scheme-name miss is <code>unavailable</code>. What
+              closes it is the trust name, which appears in the PPM rather than the deck.
+              <em>(Corrected 2026-07-21: this card previously reported a geo-fence / TLS-layer block.
+              That diagnosis was wrong — SEBI returns HTTP 530 to a default curl user-agent and HTTP 200
+              to a browser one.)</em>
             </p>
           </div>
         </div>
         <ul class="unblock-list">
           <li><span class="arrow" aria-hidden="true">&rarr;</span>
-              <span>Re-run this check from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+              <span>Supply the trust name from the PPM <a class="btn" href="#" style="margin-left:.5rem">Open attestation</a></span></li>
           <li><span class="arrow" aria-hidden="true">&rarr;</span>
               <span>Or ask the manager for the registration number and certificate <a class="btn" href="#" style="margin-left:.5rem">Add to Asks</a></span></li>
         </ul>
@@ -620,27 +622,28 @@
       <article class="q q--blocked" id="sebi_enforcement_actions">
         <h4 class="q__key">sebi_enforcement_actions</h4>
         <p class="q__route">
-          <span>geo-fence / source-IP block</span>
-          <span class="owner">owner: Infrastructure</span>
+          <span>residual — search ran, name coverage uncertain</span>
+          <span class="owner">owner: Analyst (manual check)</span>
           <span class="affects">affects CR-0002</span>
         </p>
         <div class="blocked-notice">
           <span class="blocked-notice__glyph" aria-hidden="true">□</span>
           <div>
-            <p style="margin-bottom:0.5rem"><strong>This check could not be performed. Nothing you can
-            type or upload will resolve it.</strong></p>
+            <p style="margin-bottom:0.5rem"><strong>The enforcement search ran and discriminates.</strong>
+            A clean result here means clean, not broken.</p>
             <p style="margin-bottom:0">
-              [SEBI enforcement / adjudication orders] — the same verified TLS-layer block as the
-              intermediary register. Document-side, all 52 pages were searched for 'enforcement',
-              'adjudication', 'show cause', 'debarment', 'penalty', 'proceeding' — no matter is
-              disclosed. <strong>This must NOT be read as a clean enforcement record, because no register
-              was ever reached.</strong>
+              [SEBI enforcement / adjudication orders] Document-side, all 52 pages were searched for
+              'enforcement', 'adjudication', 'show cause', 'debarment', 'penalty', 'proceeding' — no
+              matter is disclosed. The register search should be repeated against the <strong>trust</strong>
+              name as well as the manager name for full coverage.
+              <em>(Corrected 2026-07-21: this card previously reported the same TLS-layer block as the
+              intermediary register. There was no such block.)</em>
             </p>
           </div>
         </div>
         <ul class="unblock-list">
           <li><span class="arrow" aria-hidden="true">&rarr;</span>
-              <span>Re-run from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+              <span>Re-search against the trust name from the PPM <a class="btn" href="#" style="margin-left:.5rem">Open attestation</a></span></li>
         </ul>
         <div class="q__affordance">
           <a class="btn" href="#">Assign to…</a>
@@ -754,7 +757,7 @@
       <h3 class="stage-head">From scoring — 12</h3>
 
       <p style="font-size:var(--t-sm); color:var(--ink-2); max-width:70ch; margin-bottom:2rem">
-        The scoring stage re-records the same six blocked checks under their criterion-facing keys, plus
+        The scoring stage re-records the same six diligence checks under their criterion-facing keys, plus
         the two veto criteria that were forced to <code>unevaluated</code> as a result. Each carries its
         own account of what the criterion did — and did not — conclude from the failure.
       </p>
@@ -762,48 +765,52 @@
       <article class="q q--blocked" id="q-CR-0001">
         <h4 class="q__key">CR-0001</h4>
         <p class="q__route">
-          <span>geo-fence / source-IP block</span>
-          <span class="owner">owner: Infrastructure</span>
+          <span>trust-name gap (structural)</span>
+          <span class="owner">owner: Analyst (manual check)</span>
           <span class="affects">affects CR-0001</span>
         </p>
         <div class="blocked-notice">
           <span class="blocked-notice__glyph" aria-hidden="true">□</span>
           <div>
             <p style="margin-bottom:0">
-              CR-0001 was reported as fired but depends on an external source that was unavailable;
-              <strong>forced to unevaluated. An unreachable source is never an adverse finding.</strong>
-              The verdict rests solely on the absence of a registration number in the 52 pages, and no
-              conclusion was drawn from the unreachable register in either direction.
+              CR-0001 was reported as fired but the register returned no match on the fund name;
+              <strong>forced to unevaluated. A scheme-name miss is never an adverse finding</strong> —
+              SEBI registers the trust, not the scheme, so a legitimately registered fund returns
+              &ldquo;no records&rdquo; under its own name. The verdict rests solely on the absence of a
+              registration number in the 52 pages.
+              <em>(Corrected 2026-07-21: previously attributed to an unreachable register. The register
+              was reachable.)</em>
             </p>
           </div>
         </div>
         <ul class="unblock-list">
           <li><span class="arrow" aria-hidden="true">&rarr;</span>
-              <span>Re-run from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+              <span>Supply the trust name from the PPM <a class="btn" href="#" style="margin-left:.5rem">Open attestation</a></span></li>
         </ul>
       </article>
 
       <article class="q q--blocked" id="q-CR-0002">
         <h4 class="q__key">CR-0002</h4>
         <p class="q__route">
-          <span>geo-fence / source-IP block</span>
-          <span class="owner">owner: Infrastructure</span>
+          <span>residual — search ran, name coverage uncertain</span>
+          <span class="owner">owner: Analyst (manual check)</span>
           <span class="affects">affects CR-0002</span>
         </p>
         <div class="blocked-notice">
           <span class="blocked-notice__glyph" aria-hidden="true">□</span>
           <div>
             <p style="margin-bottom:0">
-              Undisclosed regulatory action against sponsor or manager <strong>could not be evaluated:
-              the external check this criterion depends on could not be performed, so the criterion
-              cannot be evaluated either way.</strong> Recorded <code>fired: false</code> on the document
-              limb only.
+              Undisclosed regulatory action against sponsor or manager. The enforcement search
+              <strong>ran and discriminates</strong>, so a clean result means clean. Coverage under the
+              trust name has not been confirmed, so the criterion is not treated as fully cleared.
+              Recorded <code>fired: false</code> on the document limb only.
+              <em>(Corrected 2026-07-21: previously attributed to an unperformable external check.)</em>
             </p>
           </div>
         </div>
         <ul class="unblock-list">
           <li><span class="arrow" aria-hidden="true">&rarr;</span>
-              <span>Re-run from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+              <span>Re-search against the trust name from the PPM <a class="btn" href="#" style="margin-left:.5rem">Open attestation</a></span></li>
         </ul>
       </article>
 

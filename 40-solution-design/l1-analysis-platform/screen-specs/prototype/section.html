@@ -547,33 +547,43 @@
         </div>
 
         <p>Both depend on the SEBI intermediary register and SEBI enforcement/adjudication orders
-        respectively. In both cases <code>www.sebi.gov.in</code> is unreachable from this network
-        egress.</p>
+        respectively. Both registers <strong>were queried successfully</strong> on this run. The
+        reason these criteria remain unevaluated is structural, not a reachability failure.</p>
       </div>
 
       <div class="blocked-notice">
         <span class="blocked-notice__glyph" aria-hidden="true">□</span>
         <div>
-          <p style="margin-bottom:0.5rem"><strong>Verified empirically.</strong> DNS resolves
-          (202.191.143.30 / .158) and TCP connect to :443 succeeds, but the connection is dropped after
-          the TLS Client Hello. A real Chrome browser fails identically to curl, which places the block
-          below the HTTP layer — <strong>a geo-fence or source-IP WAF rather than an outage or bot
-          detection.</strong> A headless browser does not help.</p>
-          <p style="margin-bottom:0">These checks must be re-run from an Indian IP to obtain a real
-          result.</p>
+          <p style="margin-bottom:0.5rem"><strong>SEBI registers the AIF trust, not the manager and
+          not the scheme.</strong> Searching this fund's name returns &ldquo;no records&rdquo; even
+          for a legitimately registered fund, so <strong>absence can never be an adverse
+          finding</strong> &mdash; the strongest available outcome from a scheme-name miss is
+          <code>unavailable</code>.</p>
+          <p style="margin-bottom:0">What closes this is the <strong>trust name</strong>, which
+          appears in the PPM rather than in a marketing deck. That makes it an analyst check
+          (<code>unblock_owner: manual_analyst_check</code>), not an infrastructure ticket.</p>
         </div>
       </div>
 
       <div class="finding__body" style="margin-top:1.5rem">
-        <p>Four further external checks are also marked unavailable and were not performed: MCA master
-        data, IFSCA GIFT City registration, whether the registered address matches the stated HQ, and
-        whether the key persons appear in filings. Only one external check passed: corporate identity.
-        <strong>Nothing in this fund's regulatory standing has been verified.</strong></p>
+        <p><strong>Corrected 2026-07-21.</strong> This section previously stated that
+        <code>www.sebi.gov.in</code> was unreachable from this network egress &mdash; that the
+        connection died after the TLS Client Hello, placing the block below the HTTP layer, and that
+        the checks had to be re-run from an Indian IP. <strong>That diagnosis was wrong.</strong>
+        SEBI returns HTTP 530 to a default <code>curl</code> user-agent and HTTP 200 to a browser
+        one: ordinary bot filtering. Both registers are server-side-rendered pages needing no
+        headless browser, and the engine now queries them live.</p>
+
+        <p>Four external checks remain genuinely unavailable: MCA master data (login wall plus
+        CAPTCHA &mdash; deliberate access controls we decline to defeat), IFSCA GIFT City
+        registration (client-rendered directory), and the two comparisons that depend on a filed
+        corporate record. Three passed. <strong>The fund's regulatory standing is now partly
+        verified &mdash; which is not the same as clean.</strong></p>
       </div>
 
       <div class="actions">
-        <a class="btn" href="open-questions.html#blocked">See all 18 blocked items</a>
-        <a class="btn" href="#">Request Indian-egress run</a>
+        <a class="btn" href="open-questions.html#blocked">See all blocked items</a>
+        <a class="btn" href="#">Supply the trust name from the PPM</a>
       </div>
     </article>
 

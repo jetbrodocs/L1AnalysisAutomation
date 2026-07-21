@@ -1079,11 +1079,60 @@ def _summarise(findings: list[dict]) -> dict:
     red_score = sum(f["effective_weight"] for f in red_fired)
     green_score = sum(f["effective_weight"] for f in green_fired)
 
-    if veto_fired:
+    # A veto terminates the analysis and rejects the fund, so it must rest on
+    # evidence both passes agree on. A contested veto is, by definition, one the
+    # engine could not decide — and "the two readings disagreed" is not grounds
+    # to reject a fund. Same for a low-confidence veto.
+    #
+    # This is the veto's asymmetry applied to itself: the power never to hire is
+    # exactly why the bar for exercising it is higher than for any other finding.
+    # Downgrading here does NOT hide the concern — the criterion stays fired, it
+    # keeps its full weight in the red score, and it surfaces in the memo with
+    # both readings. It simply cannot single-handedly end the analysis.
+    #
+    # Found 2026-07-21 on the first run where SEBI was actually reachable:
+    # CR-0001 fired `contested` at `low` confidence and flipped the whole
+    # recommendation from `hold` to `pass`. Nothing was wrong with the finding;
+    # what was wrong was letting a coin-flip terminate a deal.
+    decisive_vetoes = [
+        f for f in veto_fired
+        if not f.get("contested") and f.get("confidence") != "low"
+    ]
+    downgraded_vetoes = [f for f in veto_fired if f not in decisive_vetoes]
+
+    for f in downgraded_vetoes:
+        f["veto_downgraded"] = True
+        f["veto_downgrade_reason"] = (
+            "contested between the lenient and strict passes"
+            if f.get("contested")
+            else "fired at low confidence"
+        )
+
+    if decisive_vetoes:
         recommendation = "pass"
         basis = (
-            f"{len(veto_fired)} veto criterion/criteria fired: "
-            + ", ".join(f["criterion_code"] for f in veto_fired)
+            f"{len(decisive_vetoes)} veto criterion/criteria fired: "
+            + ", ".join(f["criterion_code"] for f in decisive_vetoes)
+        )
+        if downgraded_vetoes:
+            basis += (
+                f". A further {len(downgraded_vetoes)} veto criterion/criteria "
+                f"({', '.join(f['criterion_code'] for f in downgraded_vetoes)}) "
+                f"fired but were not decisive"
+            )
+    elif downgraded_vetoes:
+        # Vetoes fired, none decisively. Never silently drop this: a reader must
+        # know a veto was in play and why it did not end the analysis.
+        recommendation = "hold"
+        detail = ", ".join(
+            f"{f['criterion_code']} ({f['veto_downgrade_reason']})"
+            for f in downgraded_vetoes
+        )
+        basis = (
+            f"{len(downgraded_vetoes)} veto criterion/criteria fired but not "
+            f"decisively — {detail}. A veto is not exercised on a finding the "
+            f"engine could not settle; these require human adjudication before "
+            f"the fund is rejected"
         )
     elif red_score >= HOLD_RED_THRESHOLD and red_score > green_score * HOLD_RATIO:
         recommendation = "hold"

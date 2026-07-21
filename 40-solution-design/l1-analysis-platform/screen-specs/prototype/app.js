@@ -1110,7 +1110,7 @@
 
           body.appendChild(el('p', 'drawer__mock',
             'There is no answer field here, and there is no disabled one either. Inviting an ' +
-            'analyst to type an answer to a geo-fenced register check is a broken affordance — ' +
+            'analyst to type an answer to a login-walled register check is a broken affordance — ' +
             'so the prototype demonstrates that it does not exist.'));
         }
       });
