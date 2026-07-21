@@ -1,0 +1,396 @@
+# Seed criteria — 17 rules transcribed from PRD 03-criteria.md §11.
+#
+# TRANSCRIPTION NOTE (read before editing):
+#   PRD §11 supplies four columns per rule: Code, Name, Severity, Detection
+#   Guidance, Rationale. Those five fields are transcribed VERBATIM.
+#
+#   The criteria schema (PRD §4 / §2 entity table) additionally requires
+#   `category`, `weight`, `evidence_requirement`, and `remediation_prompt`.
+#   The PRD does not supply those for the seed rows, so they are AUTHORED HERE
+#   and are the weakest part of this file. `evidence_requirement` in particular
+#   drives grounding — review it before relying on any finding.
+#
+#   `weight` is 1.0 for every rule. The PRD gives no basis for differentiating
+#   them, and inventing a weight spread would encode a judgement nobody made.
+#
+# [NEEDS REVIEW] markers from the PRD are preserved inline where they appeared.
+
+criteria:
+
+  # ======================= VETO TIER =======================
+
+  - criterion_code: "CR-0001"
+    name: "No verifiable SEBI registration"
+    tier: "VETO"
+    category: "regulatory"
+    severity: "CRITICAL"
+    weight: 1.0
+    detection_guidance: >
+      Document contains no SEBI AIF registration number, or states registration
+      is "pending"/"applied for" without a number. Look for the format
+      IN/AIF{1,2,3}/YY-YY/NNNN.
+    evidence_requirement: >
+      Quote the page and text of any registration number found. To assert
+      absence, state that the full document text was searched for the
+      IN/AIF pattern and for the words "registration", "registered", and
+      "SEBI", and report what those searches returned. A claim that a
+      registration number is absent is only admissible with that search stated.
+    rationale: >
+      An unregistered AIF cannot legally accept commitments. This is a
+      regulatory precondition, not a judgement call.
+    remediation_prompt: >
+      Request the SEBI AIF registration certificate and registration number,
+      and confirm current registration status on the SEBI intermediary register.
+
+  - criterion_code: "CR-0002"
+    name: "Undisclosed regulatory action against sponsor or manager"
+    tier: "VETO"
+    category: "regulatory"
+    severity: "CRITICAL"
+    weight: 1.0
+    detection_guidance: >
+      Any mention of ongoing SEBI enforcement, adjudication, show-cause notice,
+      or debarment involving the manager, sponsor, or a named key person — or
+      evidence of such found in research that the document omits.
+    evidence_requirement: >
+      Quote the page and text of any disclosed enforcement matter. If asserting
+      an undisclosed matter exists, cite the external source and state that the
+      document was searched and contains no corresponding disclosure.
+    rationale: >
+      Material non-disclosure of enforcement action is itself disqualifying,
+      independent of the underlying matter.
+    remediation_prompt: >
+      Request written confirmation of any past or pending regulatory action,
+      show-cause notice, or adjudication involving the manager, sponsor, or any
+      named key person, over the last five years.
+
+  - criterion_code: "CR-0018"
+    name: "No attributable prior track record"
+    tier: "RED_FLAG"
+    category: "track_record"
+    severity: "HIGH"
+    weight: 3.0
+    # Moved from CR-0003 (VETO) to RED_FLAG on 2026-07-21 by stakeholder decision.
+    # Rationale: a veto would silently reject every genuinely first-time manager,
+    # and many institutions deliberately back emerging managers. A veto is also
+    # invisible in a way a red flag is not — the analysis stops rather than
+    # surfacing the concern for human judgement. An institution that DOES want
+    # this disqualifying can promote it to VETO in their own criteria set, which
+    # is exactly what per-institution criteria authoring exists for.
+    # NOTE: conjunctive — all three limbs must fail for this to fire.
+    detection_guidance: >
+      No predecessor fund, no attributable performance history at a prior firm,
+      and no named team member with a documented record in the stated strategy.
+    evidence_requirement: >
+      To assert absence, state which sections were searched for predecessor
+      funds, prior-firm attribution, and team track record, and confirm all
+      three returned nothing. Any one of the three being present defeats this
+      criterion — quote it if found.
+    rationale: >
+      A first-time manager with no attributable history cannot be underwritten
+      on evidence.
+    remediation_prompt: >
+      Request the track record of the named investment team at prior firms,
+      with attribution, and any predecessor vehicle performance.
+
+  # ======================= RED FLAG TIER =======================
+
+  - criterion_code: "CR-0010"
+    name: "Gross-only return disclosure"
+    tier: "RED_FLAG"
+    category: "disclosure"
+    severity: "HIGH"
+    weight: 1.0
+    detection_guidance: >
+      Target or historical returns are stated on a gross basis with no
+      corresponding net-to-investor figure anywhere in the document. Check
+      whether fee load, hurdle, and carry are separately disclosed such that net
+      could be derived.
+    evidence_requirement: >
+      Quote the page and text stating gross returns, and confirm no net figure
+      appears elsewhere. The absence claim must state how many pages were
+      searched and which terms were searched for (net, net-to-investor, net IRR,
+      post-fee, after fees).
+    rationale: >
+      Gross returns overstate what an investor receives. Absence of a net figure
+      alongside a stated hurdle and carry obscures the actual economics.
+    remediation_prompt: >
+      Request net-to-investor IRR for the predecessor fund and target net IRR
+      for this fund, after all fees, expenses, and carry.
+
+  - criterion_code: "CR-0011"
+    name: "Predecessor fund track record unrealised"
+    tier: "RED_FLAG"
+    category: "track_record"
+    severity: "HIGH"
+    weight: 1.0
+    detection_guidance: >
+      The prior fund cited as evidence is still within its investment or holding
+      period, with returns described as "tracking", "expected", or
+      marked-to-model rather than realised and distributed.
+    evidence_requirement: >
+      Quote the page and text describing the predecessor fund's status and the
+      language used for its returns. Distinguish realised/distributed language
+      (DPI, exited, returned) from unrealised language (tracking, expected,
+      gross MOIC on marks).
+    rationale: >
+      Unrealised marks are manager estimates. A track record without exits has
+      not been tested by an actual sale.
+    remediation_prompt: >
+      Request realised DPI, exit-by-exit realisation detail, and the current
+      valuation policy applied to remaining unrealised positions in the
+      predecessor fund.
+
+  - criterion_code: "CR-0012"
+    name: "Key person risk without documented succession"
+    tier: "RED_FLAG"
+    category: "governance"
+    severity: "HIGH"
+    weight: 1.0
+    detection_guidance: >
+      Strategy attribution concentrates on one or two named individuals, with no
+      key-person clause described and no succession or bench depth evidenced.
+    evidence_requirement: >
+      Quote the page showing attribution concentration, and state that the
+      document was searched for a key-person clause, succession plan, and bench
+      depth, reporting what each search returned.
+    rationale: >
+      Concentration of decision-making in one person is an unhedged operational
+      risk over a 7-10 year fund life.
+    remediation_prompt: >
+      Request the key-person clause language from the PPM, the succession plan,
+      and the investment team structure below the named principals.
+
+  - criterion_code: "CR-0013"
+    name: "Fee structure outside market norms"
+    tier: "RED_FLAG"
+    category: "fees"
+    severity: "MEDIUM"
+    weight: 1.0
+    # [NEEDS REVIEW — thresholds are illustrative and vary by strategy and
+    #  vintage. PRD §12 asks whether these are set per-institution at deployment
+    #  or per criteria-set-scope.]
+    detection_guidance: >
+      Management fee materially above 2% on committed capital, or carry above
+      20%, or hurdle below 8%, or catch-up terms that accelerate carry ahead of
+      LP capital return.
+    evidence_requirement: >
+      Quote the page and exact text of each fee term found — management fee,
+      hurdle, carry, catch-up — and state the numeric value against the
+      threshold it breaches. Do not fire on a term that is absent; absence is
+      CR-0034's concern, not this one.
+    rationale: >
+      Above-market economics require justification by differentiated access or
+      demonstrated alpha.
+    remediation_prompt: >
+      Request the full fee schedule including management fee basis and step-down,
+      the distribution waterfall, and justification for terms above market norms.
+
+  - criterion_code: "CR-0014"
+    name: "Sector or counterparty concentration"
+    tier: "RED_FLAG"
+    category: "concentration"
+    severity: "MEDIUM"
+    weight: 1.0
+    # [NEEDS REVIEW — appropriate for diversified strategies; wrong for
+    #  deliberately concentrated ones.]
+    detection_guidance: >
+      Portfolio construction concentrates in fewer than ~15 positions, or a
+      single sector exceeds ~40% of target deployment, without an explicit
+      concentration policy or limits.
+    evidence_requirement: >
+      Quote the page stating target position count and sector allocation, and
+      state whether an explicit concentration limit or single-investment cap was
+      found. A stated limit defeats this criterion even if concentration is high.
+    rationale: >
+      Undisclosed concentration changes the risk profile from what the headline
+      strategy implies.
+    remediation_prompt: >
+      Request the formal concentration limits from the PPM — single investment
+      cap, single sector cap, and single counterparty cap.
+
+  - criterion_code: "CR-0015"
+    name: "Service providers unnamed or non-institutional"
+    tier: "RED_FLAG"
+    category: "governance"
+    severity: "MEDIUM"
+    weight: 1.0
+    detection_guidance: >
+      Auditor, legal counsel, custodian, or registrar are unnamed, or are firms
+      without recognised institutional practice.
+    evidence_requirement: >
+      List each of the four roles and quote the page naming the firm, or state
+      that the role is unnamed after searching. This criterion is the inverse of
+      CR-0033 — they must not both fire.
+    rationale: >
+      Named tier-one service providers are a cheap, verifiable signal of
+      operational seriousness. Absence is informative.
+    remediation_prompt: >
+      Request the names and engagement letters of the auditor, legal counsel,
+      tax advisor, custodian, and registrar.
+
+  - criterion_code: "CR-0016"
+    name: "Valuation policy undisclosed"
+    tier: "RED_FLAG"
+    category: "governance"
+    severity: "HIGH"
+    weight: 1.0
+    detection_guidance: >
+      No description of how unlisted or illiquid assets are valued, no mention of
+      independent valuation, or valuation performed solely in-house without
+      third-party review.
+    evidence_requirement: >
+      State that the document was searched for the terms valuation, valuer,
+      independent valuation, fair value, and mark-to-model, and report what each
+      returned. Quote any valuation policy text found.
+    rationale: >
+      For strategies holding illiquid assets, the valuation policy determines
+      whether reported performance is meaningful.
+    remediation_prompt: >
+      Request the fund's valuation policy, the identity of the independent
+      valuer, and the frequency of independent valuation.
+
+  - criterion_code: "CR-0017"
+    name: "Stale marketing document"
+    tier: "RED_FLAG"
+    category: "disclosure"
+    severity: "LOW"
+    weight: 1.0
+    detection_guidance: >
+      Document date is more than six months prior to the date of analysis, or
+      references a fundraise timeline that has already elapsed.
+    evidence_requirement: >
+      Quote the page and text stating the document date, and state the analysis
+      date and the elapsed interval in months. The comparison is arithmetic, not
+      judgement — state both dates.
+    rationale: >
+      Terms, team, and pipeline may have changed. Findings should be caveated
+      accordingly.
+    remediation_prompt: >
+      Request the current version of the marketing material, an updated
+      fundraise status, and confirmation that terms are unchanged.
+
+  # ======================= GREEN FLAG TIER =======================
+
+  - criterion_code: "CR-0030"
+    name: "Meaningful GP commitment"
+    tier: "GREEN_FLAG"
+    category: "governance"
+    severity: "MEDIUM"
+    weight: 1.0
+    detection_guidance: >
+      Sponsor or manager commits capital alongside LPs at a level described as a
+      percentage of fund size, ideally >=2%, and stated as cash rather than fee
+      waiver.
+    evidence_requirement: >
+      Quote the page and text stating the sponsor or GP commitment, including
+      the percentage and whether it is described as cash. A commitment stated
+      without a percentage is insufficient to fire this green flag.
+    rationale: >
+      Cash co-investment aligns the manager with LP outcomes in a way fee
+      waivers do not.
+    remediation_prompt: >
+      Confirm the GP commitment percentage, whether it is funded in cash, and
+      whether any portion is satisfied by management fee waiver.
+
+  - criterion_code: "CR-0031"
+    name: "Realised predecessor track record"
+    tier: "GREEN_FLAG"
+    category: "track_record"
+    severity: "HIGH"
+    weight: 1.0
+    detection_guidance: >
+      A prior fund in the same strategy has fully or substantially exited, with
+      realised DPI or distributed returns stated and attributable to the current
+      team.
+    evidence_requirement: >
+      Quote the page stating realised DPI or distributions and the predecessor
+      fund's exit status. This criterion is the inverse of CR-0011 — they must
+      not both fire on the same predecessor fund.
+    rationale: >
+      A realised record tested by actual exits is the strongest available
+      evidence.
+    remediation_prompt: >
+      Request exit-by-exit realisation detail for the predecessor fund with
+      dates, proceeds, and the team members attributable to each.
+
+  - criterion_code: "CR-0032"
+    name: "Institutional anchor investors"
+    tier: "GREEN_FLAG"
+    category: "governance"
+    severity: "MEDIUM"
+    weight: 1.0
+    detection_guidance: >
+      Named institutional LPs — development finance institutions, insurers,
+      sovereign funds, established family offices — disclosed as anchor or
+      prior-fund investors.
+    evidence_requirement: >
+      Quote the page naming each institutional LP. An unnamed reference such as
+      "a leading insurer" is not sufficient to fire this criterion — the name
+      is the evidence.
+    rationale: >
+      Institutional LPs perform their own diligence. Their presence is
+      corroborating third-party evidence.
+    remediation_prompt: >
+      Request the anchor investor list with commitment sizes, and consent to
+      contact prior-fund LPs for reference.
+
+  - criterion_code: "CR-0033"
+    name: "Tier-one service provider set"
+    tier: "GREEN_FLAG"
+    category: "governance"
+    severity: "LOW"
+    weight: 1.0
+    detection_guidance: >
+      Auditor, legal counsel, tax advisor, custodian, and registrar all named and
+      all recognised institutional firms.
+    evidence_requirement: >
+      Quote the page and name the firm for all five roles — auditor, legal
+      counsel, tax advisor, custodian, registrar. All five must be named for
+      this criterion to fire; if any is missing, it does not fire and CR-0015
+      should be considered instead.
+    rationale: >
+      Signals the manager has invested in operational infrastructure.
+    remediation_prompt: >
+      Confirm each service provider engagement is current and request the
+      engagement letters.
+
+  - criterion_code: "CR-0034"
+    name: "Transparent fee and waterfall disclosure"
+    tier: "GREEN_FLAG"
+    category: "fees"
+    severity: "MEDIUM"
+    weight: 1.0
+    detection_guidance: >
+      Management fee basis, hurdle, catch-up treatment, and carry are all
+      explicitly stated, with a worked distribution example or illustrative
+      waterfall.
+    evidence_requirement: >
+      Quote the page for each of the four terms — management fee basis, hurdle,
+      catch-up treatment, carry — and quote the worked example or waterfall if
+      present. All four terms must be found for this criterion to fire.
+    rationale: >
+      Willingness to show the full economics is a governance signal in itself.
+    remediation_prompt: >
+      Request a worked distribution waterfall at several return scenarios,
+      showing gross-to-net bridge per scenario.
+
+  - criterion_code: "CR-0035"
+    name: "Independent investment committee"
+    tier: "GREEN_FLAG"
+    category: "governance"
+    severity: "MEDIUM"
+    weight: 1.0
+    detection_guidance: >
+      An investment committee is described with named members, including at
+      least one member independent of the manager, and its authority over deal
+      approval is stated.
+    evidence_requirement: >
+      Quote the page describing the investment committee, its named members, and
+      the statement of its approval authority. Independence must be evidenced,
+      not assumed from a name being unfamiliar.
+    rationale: >
+      Independent oversight constrains single-manager discretion.
+    remediation_prompt: >
+      Request the investment committee charter, member biographies, independence
+      declarations, and voting thresholds for deal approval.

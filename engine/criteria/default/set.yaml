@@ -1,0 +1,24 @@
+# Seed criteria set — transcribed from PRD 03-criteria.md §11.
+#
+# These are placeholders authored to make the system demonstrable, NOT house
+# policy. Every deploying institution is expected to review, edit, and replace
+# them. Nothing in the engine treats a seeded criterion differently from an
+# admin-authored one.
+#
+# Per PRD §11 the seed is deliberately left in DRAFT — an admin must review and
+# activate, forcing at least one deliberate look at the rules before any deal is
+# scored against them. `version: null` reflects that (version is assigned on
+# activation). The engine will run an unactivated set, since a standalone CLI
+# user has no Phlo activation workflow, but records the null version in run.json
+# so a score produced under a draft set is identifiable as such.
+
+set_id: "0f5b6e1a-2c34-4d8e-9a71-5b3c8d2e4f60"
+set_code: "CS-2026-0001"
+name: "AIF Cat II Credit — House View 2026 (seed)"
+description: >
+  Default seed criteria set covering veto, red flag, and green flag tiers for
+  Indian AIF marketing documents. Derived from general institutional diligence
+  practice, not validated against any specific institution's investment policy.
+asset_class_scope: ["CAT_I", "CAT_II", "CAT_III"]
+version: null
+schema_version: 1

@@ -1,0 +1,49 @@
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Test / tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Engine run output — artifacts are reproducible; never commit them.
+# A run directory contains a copy of the source PDF, which may be confidential.
+engine/out/
+engine/runs/
+**/05-memo/
+**/00-pages/
+
+# Reference documents. Third-party fund marketing material is confidential and
+# must not enter git history. The engine resolves the reference deck via
+# L1_REFERENCE_DECK or tests/fixtures/ — see engine/tests/conftest.py.
+engine/tests/fixtures/*.pdf
+
+# Inbound fund documents. The Neo NIIOF-II deck is marked "Private &
+# Confidential" by its author and is third-party material we were given for
+# evaluation, not material we own. Committing it would publish it to everyone
+# with repo access, permanently, and git history is not practically erasable.
+# Ignored by pattern so a stray `git add .` cannot sweep it in.
+00-inbox/*.pdf
+**/*.pdf
+
+# Local editor state
+.idea/
+.vscode/
+*.swp
