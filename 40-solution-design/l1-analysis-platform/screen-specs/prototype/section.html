@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4. Risk Factors — MEMO-2026-0007</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside class="draft-banner" role="note" aria-label="Draft criteria set warning">
+  <div class="draft-banner__inner">
+    <span class="draft-banner__mark">DRAFT</span>
+    <div class="draft-banner__body">
+      <p><strong>These findings were produced from a DRAFT criteria set.</strong>
+      <code>CS-2026-0001</code> carries no version number, meaning it has not been through an approval
+      workflow. Treat the findings as indicative of what this rule set would flag,
+      <strong>not as an assessment against an agreed house view.</strong>
+      <a href="#">What this means</a></p>
+    </div>
+  </div>
+</aside>
+
+<header class="masthead">
+  <div class="masthead__inner">
+    <div class="masthead__top">
+      <div class="masthead__logo">
+        <svg viewBox="0 0 473 260" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JetBro">
+          <path d="M61.0288 182.62C49.6922 217.15 37.2201 240.256 23.6127 251.94C17.5024 257.296 12.3281 260 8.14186 260C3.43559 260 1.04346 258.856 0.939453 256.36C0.939453 255.632 1.51148 255.086 2.65555 254.748C3.25112 254.613 3.82158 254.385 4.34565 254.072C10.4993 252.061 16.5663 247.199 22.5467 239.485C24.4884 236.884 26.227 234.137 27.747 231.268C37.5533 211.276 45.3907 190.376 51.1483 168.865C57.6486 145.446 65.9951 108.706 76.1876 58.6447C76.7597 56.2786 77.8777 51.5203 79.5938 44.4219C81.3099 37.3235 82.532 32.1232 83.3121 28.821L85.4702 19.7465C85.8043 17.5959 86.8046 15.6043 88.3303 14.0522C90.7219 12.7827 93.4384 12.2575 96.1308 12.5441C96.5947 12.5072 97.0611 12.5687 97.4996 12.7247C97.938 12.8807 98.3386 13.1276 98.6749 13.4492C99.0113 13.7708 99.2758 14.1599 99.4513 14.591C99.6267 15.022 99.7091 15.4852 99.693 15.9503C98.9052 20.6381 97.8724 25.2814 96.5988 29.8611C94.6227 38.2162 89.7777 61.0628 82.064 98.4009C74.3502 135.739 67.3385 163.812 61.0288 182.62Z" fill="currentColor"/>
+          <path d="M163.319 118.344C167.557 113.82 169.897 113.144 170.417 115.978C170.129 117.904 169.457 119.752 168.441 121.412C163.393 130.371 157.118 138.58 149.798 145.802C136.537 159.426 124.819 166.291 114.644 166.395C110.161 166.511 105.782 165.027 102.294 162.209C95.8798 156.887 92.673 147.63 92.673 134.439C92.673 126.985 94.9524 116.489 99.5113 102.951C104.072 89.4474 111.216 76.96 120.547 66.1853C124.741 60.829 129.075 58.1508 133.547 58.1508C135.741 58.1865 137.906 58.6548 139.918 59.5289C142.211 60.29 144.203 61.7609 145.605 63.7287C147.007 65.6965 147.747 68.0594 147.718 70.4755C147.62 71.7157 147.367 72.9387 146.964 74.1157C142.466 82.5157 137.013 90.3681 130.713 97.517C124.145 105.568 116.528 112.704 108.066 118.734C105.752 126.115 104.389 133.76 104.01 141.485C103.92 144.957 104.05 148.431 104.4 151.886C105.154 155.396 107.988 157.086 112.876 157.086C117.764 157.086 123.277 154.85 129.595 150.352C136.733 145.046 143.374 139.102 149.434 132.593C156.507 125.235 160.511 121.074 161.473 120.164C162.125 119.597 162.742 118.989 163.319 118.344V118.344ZM113.916 99.6231C115.606 99.3631 119.116 95.7749 124.785 88.8065C130.453 81.8381 133.131 76.4038 133.131 72.4776C133.095 71.7683 132.881 71.0796 132.507 70.4755C128.667 75.0057 125.14 79.7924 121.951 84.8023C116.664 92.6894 114.02 97.6297 114.02 99.6231H113.916Z" fill="currentColor"/>
+          <path d="M200.085 63.9492L245.613 62.9351C246.532 62.9351 247.546 63.8018 248.655 65.5353C249.857 67.554 250.469 69.8688 250.423 72.2176C250.423 74.0638 247.823 75.0518 243.169 75.1298C226.43 75.7362 209.751 77.4736 193.246 80.3301C191.773 84.4037 189.372 90.28 186.044 97.9591C172.176 131.969 164.913 155.804 164.255 169.463C164.238 176.203 165.573 182.879 168.181 189.094C172.74 199.651 179.535 204.929 188.566 204.929C194.89 205.149 201.108 203.265 206.247 199.573C212.57 194.408 218.245 188.498 223.148 181.97C225.176 179.37 227.282 178.46 229.492 179.214C230.533 179.646 231.405 180.405 231.977 181.375C232.549 182.346 232.79 183.476 232.664 184.596C232.664 192.292 228.209 198.715 219.3 203.863C210.634 208.972 200.758 211.666 190.698 211.663C185.756 211.712 180.856 210.744 176.303 208.821C171.749 206.898 167.64 204.06 164.229 200.483C156.792 193.012 153.074 183.079 153.074 170.685C153.16 161.671 154.215 152.692 156.22 143.904C159.147 131.791 162.962 119.911 167.635 108.36L178.581 80.1481C161.004 80.1481 151.193 79.9314 149.148 79.4981C142.881 78.198 139.683 75.6498 139.605 71.8536C139.605 70.6316 140.645 69.8775 142.491 69.5395L183.47 65.7953L210.459 20.3708C213.579 15.1705 216.405 12.5703 218.936 12.5703C220.127 12.5654 221.314 12.7051 222.472 12.9863C227.438 14.0784 229.908 15.8465 229.908 18.3426C229.908 20.8388 227.308 24.583 222.342 29.7053C217.376 34.8276 214.177 38.0777 213.007 39.5078C207.591 47.0184 203.242 55.2439 200.085 63.9492V63.9492Z" fill="currentColor"/>
+          <path d="M263.814 3.46972C264.828 1.2856 267.142 0.11553 270.756 0.0115247C274.371 -0.0924811 276.737 0.50555 277.881 1.88363C278.78 2.7917 279.356 3.97032 279.519 5.23782C279.433 6.15828 279.14 7.04731 278.661 7.83796C264.169 32.73 255.45 54.2765 252.503 72.4776C257.777 69.1028 263.873 67.2328 270.132 67.0692C275.818 67.0692 279.736 69.21 281.885 73.4916C282.686 75.2724 283.085 77.2075 283.055 79.1599C283.055 85.2963 279.042 97.6903 271.016 116.342C262.991 134.994 254.609 149.45 245.873 159.712C240.465 165.918 235.862 169.064 232.066 169.151C227.126 169.151 224.448 163.526 224.032 152.276C224.032 151.184 224.032 150.118 224.032 149.13C224.032 140.463 226.485 127.358 231.39 109.816C236.296 92.2733 247.104 56.8247 263.814 3.46972ZM236.304 135.505C236.068 137.742 235.946 139.99 235.94 142.239C235.94 144.476 236.85 145.646 238.723 145.724C242.761 145.724 248.473 138.539 255.857 124.168C262.303 112.113 267.446 99.4041 271.198 86.2583C271.846 84.0137 272.23 81.7014 272.342 79.3679C272.342 77.8338 271.666 77.0538 270.314 77.0538C261.214 77.0538 253.171 84.7762 246.185 100.221C241.083 111.399 237.749 123.303 236.304 135.505V135.505Z" fill="currentColor"/>
+          <path d="M335.474 82.2022L335.214 83.8402L334.98 85.3743C334.98 87.3678 332.033 95.4282 326.14 109.556C320.246 123.683 317.308 133.676 317.325 139.535C317.507 149.546 319.925 154.59 324.631 154.668C329.338 154.746 336.228 149.468 345.433 138.911C356.353 126.292 363.027 116.758 365.454 110.31C367.898 104.017 369.796 100.845 371.122 100.845C372.448 100.845 372.812 102.119 372.89 104.381C372.974 106.096 372.718 107.811 372.136 109.426L370.68 112.962C366.399 123.335 360.674 133.052 353.675 141.823C342.477 156.471 332.545 163.795 323.877 163.795C321.201 163.813 318.575 163.064 316.311 161.637C310.617 158.022 307.757 151.236 307.757 141.225C308.001 136.13 308.741 131.071 309.967 126.119C311.423 119.306 312.151 115.718 312.099 115.094C312.047 114.47 311.293 113.924 309.759 113.248C306.742 111.922 304.74 111.74 303.726 112.754C302.712 113.768 299.176 123.076 292.676 140.055C286.175 157.034 281.573 165.511 279.129 165.511C277.603 165.256 276.134 164.736 274.787 163.977C273.888 163.696 273.098 163.147 272.521 162.403C271.945 161.659 271.61 160.756 271.562 159.816C272.504 157.156 273.598 154.551 274.839 152.016L281.781 135.999C286.635 124.767 292.346 109.781 298.916 91.0426L315.661 43.668C316.077 42.4719 317.429 41.8479 319.691 41.7699H322.967C326.998 41.7699 329.026 43.252 329.026 46.1901C329.026 47.6116 326.842 53.9039 322.473 65.0672C318.963 73.477 316.103 82.1435 313.919 90.9906L313.477 94.6828C313.477 95.7749 313.685 96.399 314.101 96.581C315.378 94.8419 316.459 92.9671 317.325 90.9906L320.601 84.5683C321.212 83.6116 321.718 82.5916 322.109 81.5261C323.947 78.0593 326.131 76.3258 328.662 76.3258C333.03 76.3258 335.292 78.1979 335.474 81.7341V82.2022Z" fill="currentColor"/>
+          <path d="M462.595 42.2639L461.971 27.4171C461.971 24.4876 463.115 22.9275 465.403 22.7368C466.321 22.7542 467.219 23.0144 468.004 23.4909C469.266 24.0789 470.328 25.0267 471.054 26.2155C471.78 27.4044 472.139 28.7812 472.086 30.1733C471.646 37.1427 469.881 43.9643 466.885 50.2724C464.423 56.6415 461.313 62.7406 457.603 68.4734C454.376 73.0092 450.073 76.6734 445.082 79.1375C440.09 81.6016 434.565 82.7886 429.001 82.5922C424.738 82.2527 420.549 81.28 416.573 79.706C412.599 78.1194 408.409 77.1378 404.144 76.7939C402.376 76.7939 400.972 79.394 399.984 84.5943C399.88 84.941 398.909 91.7014 397.072 104.875C394.298 124.775 389.696 139.223 383.265 148.22C374.996 160.649 368.435 166.863 363.582 166.863C358.381 166.447 355.417 162.651 354.819 155.526C355.235 146.027 359.335 129.308 367.118 105.369C374.901 81.4308 381.289 66.1073 386.281 59.3989C387.867 57.3188 390.675 56.5647 394.679 57.1368C396.188 57.4748 396.968 59.1649 397.02 62.181C396.932 62.7856 396.982 63.4021 397.165 63.985C397.347 64.5679 397.658 65.1024 398.075 65.549C398.492 65.9957 399.003 66.3431 399.572 66.5658C400.141 66.7884 400.753 66.8805 401.362 66.8353C406.536 67.3424 411.613 68.5767 416.443 70.5015C422.053 72.6418 427.969 73.8707 433.968 74.1417C438.751 74.0905 443.452 72.8864 447.67 70.6315C457.62 65.5179 462.595 56.062 462.595 42.2639ZM394.341 73.0237C390.875 73.0237 385.744 83.5196 378.949 104.511C372.154 125.503 368.747 137.533 368.73 140.601C368.73 143.67 368.86 145.204 369.38 145.204C372.466 145.204 377.865 137.629 385.579 122.478C393.293 107.328 397.141 94.3275 397.124 83.4762V81.9681C396.864 75.9878 395.954 73.0237 394.341 73.0237Z" fill="currentColor"/>
+        </svg>
+        <span class="masthead__logo-div">L1 Analysis</span>
+      </div>
+      <div style="display:flex; align-items:flex-start; gap:1.5rem;">
+        <div class="masthead__ids">MEMO-2026-0007 · v1<br><span class="dim">DL-2026-0007</span></div>
+        <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="false">Theme</button>
+      </div>
+    </div>
+
+    <p class="eyebrow"><a href="index.html" style="color:inherit">Neo Infra Income Opportunities Fund II</a> · Neo Asset Management Private Limited</p>
+    <h1 style="font-size:var(--t-xl); max-width:none">4. Risk Factors</h1>
+
+    <div class="masthead__meta">
+      <span>Written for: IC</span>
+      <span>4 red flags fired</span>
+      <span>2 vetoes unevaluated</span>
+      <span>analysed 2026-07-21</span>
+      <span>CS-2026-0001 (draft)</span>
+    </div>
+  </div>
+</header>
+
+<hr class="jetbro-accent-line">
+
+<div class="shell">
+
+  <!-- ---------- RAIL ---------- -->
+  <nav class="rail" aria-label="Memo sections">
+    <div class="rail__group">
+      <p class="eyebrow">Sections</p>
+      <ul class="rail__list">
+        <li><a class="rail__item" href="index.html"><span class="rail__num">00</span><span>Index</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">01</span><span>Recommendation</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">02</span><span>Rationale</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">03</span><span>Fund Facts</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+        <li><a class="rail__item" href="section.html" aria-current="page"><span class="rail__num">04</span><span>Risk Factors</span><span class="rail__badge rail__badge--red">4</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">05</span><span>Supporting Factors</span><span class="rail__badge rail__badge--quiet">1</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">06</span><span>Fees &amp; Terms</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">07</span><span>Team</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">08</span><span>Track Record</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">09</span><span>Contested</span><span class="rail__badge rail__badge--amber">1</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">10</span><span>Asks</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="open-questions.html"><span class="rail__num">11</span><span>Open Questions</span><span class="rail__badge rail__badge--slate">59</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">12</span><span>Sources</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+      </ul>
+    </div>
+
+    <div class="rail__group rail__group--key">
+      <p class="eyebrow">Findings in §4</p>
+      <ul class="rail__list">
+        <li><a class="rail__item" href="#CR-0010"><span class="rail__num">▲</span><span>CR-0010</span><span class="rail__badge rail__badge--red">HIGH</span></a></li>
+        <li><a class="rail__item" href="#CR-0011"><span class="rail__num">▲</span><span>CR-0011</span><span class="rail__badge rail__badge--red">HIGH</span></a></li>
+        <li><a class="rail__item" href="#CR-0016"><span class="rail__num">▲</span><span>CR-0016</span><span class="rail__badge rail__badge--red">HIGH</span></a></li>
+        <li><a class="rail__item" href="#CR-0014"><span class="rail__num">◩</span><span>CR-0014</span><span class="rail__badge rail__badge--amber">MED</span></a></li>
+        <li><a class="rail__item" href="#vetoes"><span class="rail__num">□</span><span>Vetoes</span><span class="rail__badge rail__badge--slate">2</span></a></li>
+      </ul>
+    </div>
+
+    <div class="rail__group rail__group--key">
+      <p class="eyebrow">Quote verdicts</p>
+      <div class="prov-key">
+        <div class="prov-key__row">
+          <span class="cite__verdict" style="color:var(--st-green)" aria-hidden="true">✓</span>
+          <span class="prov-key__desc"><strong>Exact</strong> — found character-for-character on the cited page.</span>
+        </div>
+        <div class="prov-key__row">
+          <span class="cite__verdict" style="color:var(--st-amber)" aria-hidden="true">▨</span>
+          <span class="prov-key__desc"><strong>Layout</strong> — matched after normalising whitespace across a column splice.</span>
+        </div>
+        <div class="prov-key__row">
+          <span class="cite__verdict" style="color:var(--ink-3)" aria-hidden="true">○</span>
+          <span class="prov-key__desc"><strong>Not confirmed</strong> — shown in full, flagged. Read the page image.</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ---------- DOCUMENT ---------- -->
+  <main class="doc">
+
+    <div class="engine-note">
+      <p>Each fired red-flag and veto criterion, with its evidence and page citations. Only criteria in
+      the set can appear here — <strong>the engine does not raise concerns of its own.</strong> Where the two
+      scoring passes disagreed about a criterion, it is in
+      <a href="#">section 9</a> rather than presented as settled.</p>
+    </div>
+
+    <p class="doc__lede">
+      Four <code>RED_FLAG</code> criteria fired against Neo Infra Income Opportunities Fund II
+      (NIIOF-II). No <code>VETO</code> criterion fired; two could not be evaluated and are recorded
+      separately below.
+    </p>
+
+    <!-- ============ CR-0010 ============ -->
+    <article class="finding finding--fired" id="CR-0010" aria-labelledby="h-CR-0010">
+      <div class="finding__rank">
+        <span class="tier-badge tier-badge--red"><span aria-hidden="true">▲</span> RED FLAG</span>
+        <span class="meta-chip">severity <strong>HIGH</strong></span>
+        <span class="meta-chip">status <strong>fired</strong></span>
+        <span class="meta-chip">confidence <strong>high</strong></span>
+        <span class="meta-chip">category <strong>disclosure</strong></span>
+        <span class="contrib" title="score contribution = severity multiplier × author weight">
+          <span class="contrib__value">3.0</span>
+          <span class="contrib__derivation">HIGH 3.0 × 1.0</span>
+        </span>
+      </div>
+
+      <h2 class="finding__title" id="h-CR-0010">
+        <span class="finding__code">CR-0010</span>
+        Gross-only return disclosure
+      </h2>
+
+      <div class="finding__body">
+        <p>Every return figure in the document is presented gross, and no net-of-fees or
+        net-to-investor figure appears anywhere in the 52 pages.</p>
+
+        <p>The document states this itself. Page 52: <span class="doc-quote">"As used throughout this
+        presentation, and unless otherwise indicated, all returns are presented on a &ldquo;gross&rdquo;
+        basis."</span> And, on the same page, that gross IRRs and multiples <span class="doc-quote">"do
+        not reflect management fees, &ldquo;carried interest,&rdquo;"</span> — the finding notes the
+        sentence continues that these <span class="doc-quote">"will reduce returns and in the aggregate
+        are expected to be substantial."</span></p>
+
+        <h4>Why the fee schedule does not cure it</h4>
+        <p>Page 38 does disclose a four-tier fee schedule, a 10% hurdle and four-tier carry without
+        catch-up, so a reader could attempt a derivation. Under the strict standard applied, this does
+        not defeat the criterion for three reasons: a derivation the reader must perform is not a
+        disclosed net figure; the fee basis (commitments vs drawn capital vs NAV) is not stated
+        anywhere, so the derivation is not even well-posed; and page 42's illustration is an
+        asset-level build-up rather than a fee and carry waterfall. The gap between the ~18-20% gross
+        headline and any investor-level net is <strong>material and unquantifiable from this
+        deck.</strong></p>
+      </div>
+
+      <section class="evidence" aria-label="Evidence for CR-0010">
+        <div class="evidence__head">
+          <h3 class="evidence__title">Evidence</h3>
+          <span class="evidence__tally">5 quotes · 5 exact</span>
+        </div>
+
+        <a class="cite cite--exact" href="#">
+          <span class="cite__verdict" aria-hidden="true">✓</span>
+          <span class="cite__page">p.52</span>
+          <span class="cite__quote">"As used throughout this presentation, and unless otherwise
+          indicated, all returns are presented on a &ldquo;gross&rdquo; basis."
+          <span class="visually-hidden">Verified exact.</span></span>
+        </a>
+        <a class="cite cite--exact" href="#">
+          <span class="cite__verdict" aria-hidden="true">✓</span>
+          <span class="cite__page">p.52</span>
+          <span class="cite__quote">"Gross IRRs and gross multiples of invested capital (i.e., the total
+          combined value divided by the invested amount) do not reflect management fees,
+          &ldquo;carried interest,&rdquo;"<span class="visually-hidden">Verified exact.</span></span>
+        </a>
+        <a class="cite cite--exact" href="#">
+          <span class="cite__verdict" aria-hidden="true">✓</span>
+          <span class="cite__page">p.20</span>
+          <span class="cite__quote">"Strategy aligned to NIIOF-I and targeting aggregate portfolio gross
+          IRR of ~18-20% p.a."<span class="visually-hidden">Verified exact.</span></span>
+        </a>
+        <a class="cite cite--exact" href="#">
+          <span class="cite__verdict" aria-hidden="true">✓</span>
+          <span class="cite__page">p.37</span>
+          <span class="cite__quote">"Expected IRR&nbsp;&nbsp;&nbsp;~ 18-20% p.a."
+          <span class="visually-hidden">Verified exact.</span></span>
+        </a>
+        <a class="cite cite--exact" href="#">
+          <span class="cite__verdict" aria-hidden="true">✓</span>
+          <span class="cite__page">p.17</span>
+          <span class="cite__quote">"Robust, operating, cash generating infra projects tracking gross IRR
+          of ~21%"<span class="visually-hidden">Verified exact.</span></span>
+        </a>
+      </section>
+
+      <details class="disclosure">
+        <summary>What was searched and not found</summary>
+        <div class="disclosure__body">
+          <p>All 52 supplied pages were searched for "net of fees", "net IRR", "net-to-investor", "net to
+          investor", "post-fee", "post fee", "after fees", and the bare token "net". The token appears
+          only in unrelated compounds — page 3 "Net Worth", page 42 "Net income for equity investor"
+          (an asset-level line in an IRR build-up, struck before any fund fee). Return figures appear on
+          pages 4, 13, 17, 19, 20, 21, 22, 25, 37 and 42, and <strong>every one is gross or
+          unqualified.</strong></p>
+        </div>
+      </details>
+
+      <details class="disclosure">
+        <summary>Ask the manager</summary>
+        <div class="disclosure__body">
+          <p>Ask the manager for net-to-investor IRR for NIIOF-II modelled per unit class (A1 through
+          A4), stating the management fee basis, and for NIIOF-I's net-of-fees tracking IRR alongside
+          the ~21% gross figure on page 17.</p>
+        </div>
+      </details>
+
+      <div class="actions">
+        <a class="btn" href="#">Open source page</a>
+        <a class="btn" href="#">Override finding</a>
+        <a class="btn" href="open-questions.html#economics.net_return_to_investor">Answer this</a>
+        <a class="btn" href="#">Flag</a>
+      </div>
+    </article>
+
+    <!-- ============ CR-0011 ============ -->
+    <article class="finding finding--fired" id="CR-0011" aria-labelledby="h-CR-0011">
+      <div class="finding__rank">
+        <span class="tier-badge tier-badge--red"><span aria-hidden="true">▲</span> RED FLAG</span>
+        <span class="meta-chip">severity <strong>HIGH</strong></span>
+        <span class="meta-chip">status <strong>fired</strong></span>
+        <span class="meta-chip">confidence <strong>high</strong></span>
+        <span class="meta-chip">category <strong>track record</strong></span>
+        <span class="contrib" title="score contribution = severity multiplier × author weight">
+          <span class="contrib__value">3.0</span>
+          <span class="contrib__derivation">HIGH 3.0 × 1.0</span>
+        </span>
+      </div>
+
+      <h2 class="finding__title" id="h-CR-0011">
+        <span class="finding__code">CR-0011</span>
+        Predecessor fund track record unrealised
+      </h2>
+
+      <div class="finding__body">
+        <p>The predecessor fund cited as evidence, Neo Infra Income Opportunities Fund I (NIIOF-I), is
+        still within its deployment phase, and its return is stated in unrealised, mark-to-model
+        language.</p>
+
+        <h4>Status</h4>
+        <p>Page 13 describes NIIOF-I as <span class="doc-quote">"Fund fully committed –"</span>, with
+        deals worth Rs 2,985 crore completed or committed, and cashflows accruing
+        <span class="doc-quote">"from deals that are yet"</span> to close. That is a fund still
+        deploying, not harvesting.</p>
+
+        <h4>Language</h4>
+        <p>The return is labelled <span class="doc-quote">"Tracking gross IRR"</span> of
+        <span class="doc-quote">"~21% better than"</span> on page 13. Page 14 states
+        <span class="doc-quote">"NIIOF-I targeted gross IRR of ~18-20% p.a.; well on its path to
+        achieving target IRRs"</span>. "Tracking" is precisely the mark-to-model formulation the
+        criterion names. Page 17's footnote <span class="doc-quote">"*As per market price as on
+        18-02-2026"</span> confirms three of the five completed positions are valued on marks rather
+        than exits.</p>
+
+        <h4>Distributions are not realisations</h4>
+        <p>The distribution rates of ~12-13% for FY26 and ~8.2% in FY25 (page 13) are current yield on
+        deployed capital, not capital returned, and do not convert the record to a realised one.</p>
+      </div>
+
+      <section class="evidence" aria-label="Evidence for CR-0011">
+        <div class="evidence__head">
+          <h3 class="evidence__title">Evidence</h3>
+          <span class="evidence__tally">6 quotes · 6 exact</span>
+        </div>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.13</span><span class="cite__quote">"Fund fully committed –"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.13</span><span class="cite__quote">"Tracking gross IRR"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.13</span><span class="cite__quote">"~21% better than"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.13</span><span class="cite__quote">"from deals that are yet"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.17</span><span class="cite__quote">"Robust, operating, cash generating infra projects tracking gross IRR of ~21%"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.14</span><span class="cite__quote">"NIIOF-I targeted gross IRR of ~18-20% p.a.; well on its path to achieving target IRRs"</span></a>
+      </section>
+
+      <details class="disclosure">
+        <summary>What was searched and not found</summary>
+        <div class="disclosure__body">
+          <p>All 52 pages were searched for "DPI", "distributions to paid-in", "realised", "realized",
+          "capital returned", "return of capital", "exited", "exit completed", "divested". NIIOF-I is
+          nowhere described as having exited any asset. Page 17 marks five deals "Completed" and three
+          "Committed", but "Completed" there denotes <em>acquisition</em> completion — confirmed by the
+          Remarks column reading "❖ Already acquired" against every "Completed" row. The words
+          "successful exits" on page 27 refer to the investing team's prior-firm experience, not to
+          NIIOF-I. <strong>No DPI multiple and no distributed-capital amount for NIIOF-I appears
+          anywhere.</strong></p>
+        </div>
+      </details>
+
+      <div class="actions">
+        <a class="btn" href="#">Open source page</a>
+        <a class="btn" href="#">Override finding</a>
+        <a class="btn" href="open-questions.html#track_record.realised_dpi">Answer this</a>
+        <a class="btn" href="#">Flag</a>
+      </div>
+    </article>
+
+    <!-- ============ CR-0016 — carries the layout-normalised quote ============ -->
+    <article class="finding finding--fired" id="CR-0016" aria-labelledby="h-CR-0016">
+      <div class="finding__rank">
+        <span class="tier-badge tier-badge--red"><span aria-hidden="true">▲</span> RED FLAG</span>
+        <span class="meta-chip">severity <strong>HIGH</strong></span>
+        <span class="meta-chip">status <strong>fired</strong></span>
+        <span class="meta-chip">confidence <strong>medium</strong></span>
+        <span class="meta-chip">category <strong>governance</strong></span>
+        <span class="contrib" title="score contribution = severity multiplier × author weight">
+          <span class="contrib__value">3.0</span>
+          <span class="contrib__derivation">HIGH 3.0 × 1.0</span>
+        </span>
+      </div>
+
+      <h2 class="finding__title" id="h-CR-0016">
+        <span class="finding__code">CR-0016</span>
+        Valuation policy undisclosed
+      </h2>
+
+      <div class="finding__body">
+        <p>The document carries no valuation policy of any kind, and no mention of independent
+        valuation.</p>
+
+        <p>"Valuation" itself appears four times, never as a policy: page 41, as one item on a quarterly
+        review agenda; page 25, twice, about deal pricing negotiation with sellers; and page 44, as
+        "value add", unrelatedly. Under the strict standard, page 41 is not a description of
+        methodology: it says valuation is <em>reviewed</em>, not how it is determined, by whom, or
+        against what standard.</p>
+
+        <h4>The one stated basis does not reach the relevant assets</h4>
+        <p>Page 17's footnote <span class="doc-quote">"*As per market price as on 18-02-2026"</span>
+        establishes a pricing source for three listed or InvIT positions. It says nothing about the
+        unlisted operating road and solar SPVs that constitute the 80% strategy — precisely the
+        illiquid assets this criterion targets.</p>
+
+        <h4>Why it matters directly</h4>
+        <p>The ~21% tracking gross IRR on pages 13 and 17 rests on carrying values whose derivation the
+        document never explains, and those same unexplained marks underpin the NIIOF-II track-record
+        claim. EY is named as Fund Auditor on page 37, but <strong>an audit is not a valuation
+        policy</strong>, and naming an auditor does not evidence independent portfolio valuation.</p>
+      </div>
+
+      <section class="evidence" aria-label="Evidence for CR-0016">
+        <div class="evidence__head">
+          <h3 class="evidence__title">Evidence</h3>
+          <span class="evidence__tally">4 quotes · 3 exact · 1 layout-normalised</span>
+        </div>
+
+        <div class="cite cite--layout">
+          <span class="cite__verdict" aria-hidden="true">▨</span>
+          <span class="cite__page">p.41</span>
+          <span class="cite__quote">"❖ Detailed review with IC sub-committee on performance, comparison
+          with underwriting case, valuation, anticipated returns,"</span>
+          <p class="cite__note">
+            <strong>Verified — layout-normalised.</strong> Matched after normalising whitespace. The
+            words are on the page; the line breaks are not reproducible, because this cell spans two
+            columns of a slide-derived table.
+          </p>
+        </div>
+
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.25</span><span class="cite__quote">"Valuation agreed with Seller. DD to"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.25</span><span class="cite__quote">"Valuation being discussed."</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.17</span><span class="cite__quote">"*As per market price as on 18-02-2026"</span></a>
+      </section>
+
+      <details class="disclosure">
+        <summary>What was searched and not found</summary>
+        <div class="disclosure__body">
+          <p>All 52 pages were searched for "valuation policy", "valuer", "independent valuation",
+          "independent valuer", "fair value", "fair market value", "mark-to-model", "marked to market",
+          "IPEV", "Ind AS 113", "third-party valuation", "registered valuer". The words "valuer",
+          "independent valuation", "fair value", "mark-to-model", "IPEV" and "registered valuer" return
+          <strong>zero occurrences across all 52 pages</strong>.</p>
+        </div>
+      </details>
+
+      <div class="actions">
+        <a class="btn" href="#">Open source page</a>
+        <a class="btn" href="#">Override finding</a>
+        <a class="btn" href="open-questions.html#governance.valuation_policy">Answer this</a>
+        <a class="btn" href="#">Flag</a>
+      </div>
+    </article>
+
+    <!-- ============ CR-0014 — contested, and carries the unverified quote ============ -->
+    <article class="finding finding--contested" id="CR-0014" aria-labelledby="h-CR-0014">
+      <div class="finding__rank">
+        <span class="tier-badge tier-badge--red"><span aria-hidden="true">▲</span> RED FLAG</span>
+        <span class="tier-badge" style="color:var(--st-amber); background:var(--tint-amber)">
+          <span aria-hidden="true">◩</span> CONTESTED
+        </span>
+        <span class="meta-chip">severity <strong>MEDIUM</strong></span>
+        <span class="meta-chip">status <strong>fired (strict)</strong></span>
+        <span class="meta-chip">confidence <strong>low</strong></span>
+        <span class="contrib contrib--contested"
+              title="score contribution = severity multiplier × author weight. Carried on the strict reading.">
+          <span class="contrib__value">2.0</span>
+          <span class="contrib__derivation">MEDIUM 2.0 × 1.0</span>
+        </span>
+      </div>
+
+      <h2 class="finding__title" id="h-CR-0014">
+        <span class="finding__code">CR-0014</span>
+        Sector or counterparty concentration
+      </h2>
+
+      <div class="finding__body">
+        <p><strong>This finding is contested.</strong> The lenient and strict evaluation passes reached
+        opposite verdicts. The strict reading fired it and is reproduced here; both readings are set out
+        in full in the contested-findings section, and <strong>the disagreement is deliberately not
+        resolved.</strong></p>
+      </div>
+
+      <div class="readings">
+        <div class="reading reading--lenient">
+          <p class="reading__head">READING A · LENIENT — does not fire</p>
+          <div class="reading__body">
+            <p>Page 23 is a dedicated guardrails page stating an explicit concentration policy: at least
+            80% into operating long-duration contracted-cashflow assets, and at least 80% into roads and
+            solar. The criterion expressly provides that a stated limit defeats it. Confidence
+            <strong>medium</strong> — what is stated are floors, not caps.</p>
+          </div>
+        </div>
+        <div class="reading reading--strict">
+          <p class="reading__head">READING B · STRICT — does fire</p>
+          <div class="reading__body">
+            <p>The "Atleast 80%" statements are allocation <em>floors that compel concentration</em>, and
+            reading them as a concentration policy would invert their plain meaning. A stated limit must
+            <em>bound</em> exposure — no such ceiling exists in the 52 pages. Confidence
+            <strong>high</strong>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="finding__body">
+        <h4>Counterparty overlap compounds it</h4>
+        <p>Page 16 states 95% of fund exposure to entities having Central Government counterparties for
+        NIIOF-I, page 14 names NHAI, NTPC, MORTH and SECI, and all six pipeline deals on page 25 are HAM
+        roads. Sector concentration and counterparty concentration point the same way, unbounded by any
+        stated cap.</p>
+      </div>
+
+      <section class="evidence" aria-label="Evidence for CR-0014">
+        <div class="evidence__head">
+          <h3 class="evidence__title">Evidence</h3>
+          <span class="evidence__tally">9 quotes · 8 exact · 1 not confirmed</span>
+        </div>
+
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.23</span><span class="cite__quote">"Retain strategic focus : Atleast 80% of Fund"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.23</span><span class="cite__quote">"concentrated within roads and solar"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.20</span><span class="cite__quote">"Operating Solar and Road&nbsp;&nbsp;20%&nbsp;&nbsp;InvITs and others – 20%"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.37</span><span class="cite__quote">"Sector Focus&nbsp;&nbsp;Road &amp; Renewables"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.37</span><span class="cite__quote">"20 to 22"</span></a>
+
+        <!-- THE UNVERIFIED QUOTE. Retained, shown in full, flagged — not an error state. -->
+        <div class="cite cite--unverified">
+          <span class="cite__verdict" aria-hidden="true">○</span>
+          <span class="cite__page">p.37</span>
+          <span class="cite__quote">"Estimated Number of Fund Investments"</span>
+          <p class="cite__note">
+            <strong>Not mechanically confirmed.</strong> We checked this quote against the extracted
+            text of page 37 and could not confirm it there. The engine's extraction loses spatial layout
+            on slide-derived pages, and this label sits in a two-column terms table. The quote is
+            retained and shown in full rather than dropped.
+            <br>
+            <a href="#">Open the page image and read it yourself &rarr;</a>
+          </p>
+        </div>
+
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.23</span><span class="cite__quote">"duration with contracted cashflows"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.19</span><span class="cite__quote">"Roads"</span></a>
+        <a class="cite cite--exact" href="#"><span class="cite__verdict" aria-hidden="true">✓</span><span class="cite__page">p.19</span><span class="cite__quote">"Solar"</span></a>
+      </section>
+
+      <details class="disclosure">
+        <summary>What was searched and not found</summary>
+        <div class="disclosure__body">
+          <p>All 52 pages were searched for "single investment", "per investment", "maximum exposure",
+          "not exceed", "shall not exceed", "cap", "limit", "diversification limit", "maximum of", "no
+          more than". <strong>No investment-level or issuer-level concentration cap appears
+          anywhere.</strong> Page 37's terms table has no concentration or diversification row; its
+          footnote reads "*For more details refer PPM".</p>
+        </div>
+      </details>
+
+      <div class="actions">
+        <a class="btn btn--primary" href="#">Compare readings side by side</a>
+        <a class="btn" href="#">Accept lenient</a>
+        <a class="btn" href="#">Accept strict</a>
+        <a class="btn" href="#">Leave contested</a>
+      </div>
+    </article>
+
+    <!-- ============ VETOES ============ -->
+    <article class="finding finding--unevaluated" id="vetoes" aria-labelledby="h-vetoes">
+      <div class="finding__rank">
+        <span class="tier-badge tier-badge--veto"><span aria-hidden="true">□</span> VETO · NOT EVALUATED</span>
+        <span class="meta-chip">severity <strong>CRITICAL</strong></span>
+        <span class="meta-chip">status <strong>veto_unevaluated</strong></span>
+        <!-- These contribute 0.0 because they did not fire — NOT because they are
+             harmless. A bare "0.0" beside a CRITICAL veto would read as "no
+             problem here", which is the exact misreading §11 exists to prevent.
+             So the value is withheld and the reason is stated instead. -->
+        <span class="contrib contrib--unevaluated"
+              title="A veto that could not be evaluated contributes nothing to the score. That is not the same as contributing nothing to the decision.">
+          <span class="contrib__value">—</span>
+          <span class="contrib__derivation">not scored · CRITICAL 5.0 unapplied</span>
+        </span>
+      </div>
+
+      <h2 class="finding__title" id="h-vetoes" style="max-width:40ch">
+        Two VETO criteria could not be evaluated
+      </h2>
+
+      <div class="finding__body">
+        <p>Neither of the following fired, and <strong>neither was cleared. The checks did not
+        run.</strong> They are recorded here because the recommendation was computed without them.</p>
+
+        <p>Both carry <code>CRITICAL</code> severity, which would apply a ×5.0 multiplier — the
+        heaviest in the model. <strong>Neither contributes to the 11.0 red weight, because a
+        criterion that could not be evaluated cannot fire.</strong> Their absence from the score is
+        a gap in the arithmetic, not a point in the fund's favour: had either been evaluable and
+        fired, it would have vetoed the recommendation outright.</p>
+
+        <div class="veto-statement__codes" style="margin-block:1.5rem">
+          <span class="tier-badge tier-badge--veto"><span aria-hidden="true">□</span> CR-0001 · No verifiable SEBI registration</span>
+          <span class="tier-badge tier-badge--veto"><span aria-hidden="true">□</span> CR-0002 · Undisclosed regulatory action against sponsor or manager</span>
+        </div>
+
+        <p>Both depend on the SEBI intermediary register and SEBI enforcement/adjudication orders
+        respectively. In both cases <code>www.sebi.gov.in</code> is unreachable from this network
+        egress.</p>
+      </div>
+
+      <div class="blocked-notice">
+        <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+        <div>
+          <p style="margin-bottom:0.5rem"><strong>Verified empirically.</strong> DNS resolves
+          (202.191.143.30 / .158) and TCP connect to :443 succeeds, but the connection is dropped after
+          the TLS Client Hello. A real Chrome browser fails identically to curl, which places the block
+          below the HTTP layer — <strong>a geo-fence or source-IP WAF rather than an outage or bot
+          detection.</strong> A headless browser does not help.</p>
+          <p style="margin-bottom:0">These checks must be re-run from an Indian IP to obtain a real
+          result.</p>
+        </div>
+      </div>
+
+      <div class="finding__body" style="margin-top:1.5rem">
+        <p>Four further external checks are also marked unavailable and were not performed: MCA master
+        data, IFSCA GIFT City registration, whether the registered address matches the stated HQ, and
+        whether the key persons appear in filings. Only one external check passed: corporate identity.
+        <strong>Nothing in this fund's regulatory standing has been verified.</strong></p>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="open-questions.html#blocked">See all 18 blocked items</a>
+        <a class="btn" href="#">Request Indian-egress run</a>
+      </div>
+    </article>
+
+    <nav class="doc-nav" aria-label="Section navigation">
+      <a href="#">&larr; 3. Fund Facts</a>
+      <a href="index.html">Index</a>
+      <a href="#">5. Supporting Factors &rarr;</a>
+    </nav>
+
+  </main>
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>

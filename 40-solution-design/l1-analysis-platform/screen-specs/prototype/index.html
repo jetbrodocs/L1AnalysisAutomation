@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEMO-2026-0007 — Neo Infra Income Opportunities Fund II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===================== A. DRAFT CRITERIA BANNER ===================== -->
+<aside class="draft-banner" role="note" aria-label="Draft criteria set warning">
+  <div class="draft-banner__inner">
+    <span class="draft-banner__mark">DRAFT</span>
+    <div class="draft-banner__body">
+      <p><strong>These findings were produced from a DRAFT criteria set.</strong>
+      <code>CS-2026-0001</code> carries no version number, meaning it has not been through an approval
+      workflow. The rules themselves — what counts as a red flag, and at what threshold — are
+      provisional and have not been signed off.</p>
+      <p>Treat the findings as indicative of what this rule set would flag, <strong>not as an assessment
+      against an agreed house view.</strong>
+      <a href="#">What this means</a> · <a href="#">Open CS-2026-0001</a></p>
+    </div>
+  </div>
+</aside>
+
+<!-- ===================== MASTHEAD ===================== -->
+<header class="masthead">
+  <div class="masthead__inner">
+    <div class="masthead__top">
+      <div class="masthead__logo">
+        <svg viewBox="0 0 473 260" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JetBro">
+          <path d="M61.0288 182.62C49.6922 217.15 37.2201 240.256 23.6127 251.94C17.5024 257.296 12.3281 260 8.14186 260C3.43559 260 1.04346 258.856 0.939453 256.36C0.939453 255.632 1.51148 255.086 2.65555 254.748C3.25112 254.613 3.82158 254.385 4.34565 254.072C10.4993 252.061 16.5663 247.199 22.5467 239.485C24.4884 236.884 26.227 234.137 27.747 231.268C37.5533 211.276 45.3907 190.376 51.1483 168.865C57.6486 145.446 65.9951 108.706 76.1876 58.6447C76.7597 56.2786 77.8777 51.5203 79.5938 44.4219C81.3099 37.3235 82.532 32.1232 83.3121 28.821L85.4702 19.7465C85.8043 17.5959 86.8046 15.6043 88.3303 14.0522C90.7219 12.7827 93.4384 12.2575 96.1308 12.5441C96.5947 12.5072 97.0611 12.5687 97.4996 12.7247C97.938 12.8807 98.3386 13.1276 98.6749 13.4492C99.0113 13.7708 99.2758 14.1599 99.4513 14.591C99.6267 15.022 99.7091 15.4852 99.693 15.9503C98.9052 20.6381 97.8724 25.2814 96.5988 29.8611C94.6227 38.2162 89.7777 61.0628 82.064 98.4009C74.3502 135.739 67.3385 163.812 61.0288 182.62Z" fill="currentColor"/>
+          <path d="M163.319 118.344C167.557 113.82 169.897 113.144 170.417 115.978C170.129 117.904 169.457 119.752 168.441 121.412C163.393 130.371 157.118 138.58 149.798 145.802C136.537 159.426 124.819 166.291 114.644 166.395C110.161 166.511 105.782 165.027 102.294 162.209C95.8798 156.887 92.673 147.63 92.673 134.439C92.673 126.985 94.9524 116.489 99.5113 102.951C104.072 89.4474 111.216 76.96 120.547 66.1853C124.741 60.829 129.075 58.1508 133.547 58.1508C135.741 58.1865 137.906 58.6548 139.918 59.5289C142.211 60.29 144.203 61.7609 145.605 63.7287C147.007 65.6965 147.747 68.0594 147.718 70.4755C147.62 71.7157 147.367 72.9387 146.964 74.1157C142.466 82.5157 137.013 90.3681 130.713 97.517C124.145 105.568 116.528 112.704 108.066 118.734C105.752 126.115 104.389 133.76 104.01 141.485C103.92 144.957 104.05 148.431 104.4 151.886C105.154 155.396 107.988 157.086 112.876 157.086C117.764 157.086 123.277 154.85 129.595 150.352C136.733 145.046 143.374 139.102 149.434 132.593C156.507 125.235 160.511 121.074 161.473 120.164C162.125 119.597 162.742 118.989 163.319 118.344V118.344ZM113.916 99.6231C115.606 99.3631 119.116 95.7749 124.785 88.8065C130.453 81.8381 133.131 76.4038 133.131 72.4776C133.095 71.7683 132.881 71.0796 132.507 70.4755C128.667 75.0057 125.14 79.7924 121.951 84.8023C116.664 92.6894 114.02 97.6297 114.02 99.6231H113.916Z" fill="currentColor"/>
+          <path d="M200.085 63.9492L245.613 62.9351C246.532 62.9351 247.546 63.8018 248.655 65.5353C249.857 67.554 250.469 69.8688 250.423 72.2176C250.423 74.0638 247.823 75.0518 243.169 75.1298C226.43 75.7362 209.751 77.4736 193.246 80.3301C191.773 84.4037 189.372 90.28 186.044 97.9591C172.176 131.969 164.913 155.804 164.255 169.463C164.238 176.203 165.573 182.879 168.181 189.094C172.74 199.651 179.535 204.929 188.566 204.929C194.89 205.149 201.108 203.265 206.247 199.573C212.57 194.408 218.245 188.498 223.148 181.97C225.176 179.37 227.282 178.46 229.492 179.214C230.533 179.646 231.405 180.405 231.977 181.375C232.549 182.346 232.79 183.476 232.664 184.596C232.664 192.292 228.209 198.715 219.3 203.863C210.634 208.972 200.758 211.666 190.698 211.663C185.756 211.712 180.856 210.744 176.303 208.821C171.749 206.898 167.64 204.06 164.229 200.483C156.792 193.012 153.074 183.079 153.074 170.685C153.16 161.671 154.215 152.692 156.22 143.904C159.147 131.791 162.962 119.911 167.635 108.36L178.581 80.1481C161.004 80.1481 151.193 79.9314 149.148 79.4981C142.881 78.198 139.683 75.6498 139.605 71.8536C139.605 70.6316 140.645 69.8775 142.491 69.5395L183.47 65.7953L210.459 20.3708C213.579 15.1705 216.405 12.5703 218.936 12.5703C220.127 12.5654 221.314 12.7051 222.472 12.9863C227.438 14.0784 229.908 15.8465 229.908 18.3426C229.908 20.8388 227.308 24.583 222.342 29.7053C217.376 34.8276 214.177 38.0777 213.007 39.5078C207.591 47.0184 203.242 55.2439 200.085 63.9492V63.9492Z" fill="currentColor"/>
+          <path d="M263.814 3.46972C264.828 1.2856 267.142 0.11553 270.756 0.0115247C274.371 -0.0924811 276.737 0.50555 277.881 1.88363C278.78 2.7917 279.356 3.97032 279.519 5.23782C279.433 6.15828 279.14 7.04731 278.661 7.83796C264.169 32.73 255.45 54.2765 252.503 72.4776C257.777 69.1028 263.873 67.2328 270.132 67.0692C275.818 67.0692 279.736 69.21 281.885 73.4916C282.686 75.2724 283.085 77.2075 283.055 79.1599C283.055 85.2963 279.042 97.6903 271.016 116.342C262.991 134.994 254.609 149.45 245.873 159.712C240.465 165.918 235.862 169.064 232.066 169.151C227.126 169.151 224.448 163.526 224.032 152.276C224.032 151.184 224.032 150.118 224.032 149.13C224.032 140.463 226.485 127.358 231.39 109.816C236.296 92.2733 247.104 56.8247 263.814 3.46972ZM236.304 135.505C236.068 137.742 235.946 139.99 235.94 142.239C235.94 144.476 236.85 145.646 238.723 145.724C242.761 145.724 248.473 138.539 255.857 124.168C262.303 112.113 267.446 99.4041 271.198 86.2583C271.846 84.0137 272.23 81.7014 272.342 79.3679C272.342 77.8338 271.666 77.0538 270.314 77.0538C261.214 77.0538 253.171 84.7762 246.185 100.221C241.083 111.399 237.749 123.303 236.304 135.505V135.505Z" fill="currentColor"/>
+          <path d="M335.474 82.2022L335.214 83.8402L334.98 85.3743C334.98 87.3678 332.033 95.4282 326.14 109.556C320.246 123.683 317.308 133.676 317.325 139.535C317.507 149.546 319.925 154.59 324.631 154.668C329.338 154.746 336.228 149.468 345.433 138.911C356.353 126.292 363.027 116.758 365.454 110.31C367.898 104.017 369.796 100.845 371.122 100.845C372.448 100.845 372.812 102.119 372.89 104.381C372.974 106.096 372.718 107.811 372.136 109.426L370.68 112.962C366.399 123.335 360.674 133.052 353.675 141.823C342.477 156.471 332.545 163.795 323.877 163.795C321.201 163.813 318.575 163.064 316.311 161.637C310.617 158.022 307.757 151.236 307.757 141.225C308.001 136.13 308.741 131.071 309.967 126.119C311.423 119.306 312.151 115.718 312.099 115.094C312.047 114.47 311.293 113.924 309.759 113.248C306.742 111.922 304.74 111.74 303.726 112.754C302.712 113.768 299.176 123.076 292.676 140.055C286.175 157.034 281.573 165.511 279.129 165.511C277.603 165.256 276.134 164.736 274.787 163.977C273.888 163.696 273.098 163.147 272.521 162.403C271.945 161.659 271.61 160.756 271.562 159.816C272.504 157.156 273.598 154.551 274.839 152.016L281.781 135.999C286.635 124.767 292.346 109.781 298.916 91.0426L315.661 43.668C316.077 42.4719 317.429 41.8479 319.691 41.7699H322.967C326.998 41.7699 329.026 43.252 329.026 46.1901C329.026 47.6116 326.842 53.9039 322.473 65.0672C318.963 73.477 316.103 82.1435 313.919 90.9906L313.477 94.6828C313.477 95.7749 313.685 96.399 314.101 96.581C315.378 94.8419 316.459 92.9671 317.325 90.9906L320.601 84.5683C321.212 83.6116 321.718 82.5916 322.109 81.5261C323.947 78.0593 326.131 76.3258 328.662 76.3258C333.03 76.3258 335.292 78.1979 335.474 81.7341V82.2022Z" fill="currentColor"/>
+          <path d="M462.595 42.2639L461.971 27.4171C461.971 24.4876 463.115 22.9275 465.403 22.7368C466.321 22.7542 467.219 23.0144 468.004 23.4909C469.266 24.0789 470.328 25.0267 471.054 26.2155C471.78 27.4044 472.139 28.7812 472.086 30.1733C471.646 37.1427 469.881 43.9643 466.885 50.2724C464.423 56.6415 461.313 62.7406 457.603 68.4734C454.376 73.0092 450.073 76.6734 445.082 79.1375C440.09 81.6016 434.565 82.7886 429.001 82.5922C424.738 82.2527 420.549 81.28 416.573 79.706C412.599 78.1194 408.409 77.1378 404.144 76.7939C402.376 76.7939 400.972 79.394 399.984 84.5943C399.88 84.941 398.909 91.7014 397.072 104.875C394.298 124.775 389.696 139.223 383.265 148.22C374.996 160.649 368.435 166.863 363.582 166.863C358.381 166.447 355.417 162.651 354.819 155.526C355.235 146.027 359.335 129.308 367.118 105.369C374.901 81.4308 381.289 66.1073 386.281 59.3989C387.867 57.3188 390.675 56.5647 394.679 57.1368C396.188 57.4748 396.968 59.1649 397.02 62.181C396.932 62.7856 396.982 63.4021 397.165 63.985C397.347 64.5679 397.658 65.1024 398.075 65.549C398.492 65.9957 399.003 66.3431 399.572 66.5658C400.141 66.7884 400.753 66.8805 401.362 66.8353C406.536 67.3424 411.613 68.5767 416.443 70.5015C422.053 72.6418 427.969 73.8707 433.968 74.1417C438.751 74.0905 443.452 72.8864 447.67 70.6315C457.62 65.5179 462.595 56.062 462.595 42.2639ZM394.341 73.0237C390.875 73.0237 385.744 83.5196 378.949 104.511C372.154 125.503 368.747 137.533 368.73 140.601C368.73 143.67 368.86 145.204 369.38 145.204C372.466 145.204 377.865 137.629 385.579 122.478C393.293 107.328 397.141 94.3275 397.124 83.4762V81.9681C396.864 75.9878 395.954 73.0237 394.341 73.0237Z" fill="currentColor"/>
+        </svg>
+        <span class="masthead__logo-div">L1 Analysis</span>
+      </div>
+
+      <div style="display:flex; align-items:flex-start; gap:1.5rem;">
+        <div class="masthead__ids">
+          MEMO-2026-0007 · v1<br>
+          <span class="dim">DL-2026-0007</span>
+        </div>
+        <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="false">Theme</button>
+      </div>
+    </div>
+
+    <p class="eyebrow">Investment Committee memo</p>
+    <h1>Neo Infra Income Opportunities Fund II</h1>
+    <p class="masthead__manager">Neo Asset Management Private Limited</p>
+
+    <div class="masthead__meta">
+      <span>Analysed 2026-07-21</span>
+      <span>52 pp · Feb 2026 deck</span>
+      <span>CS-2026-0001 (draft)</span>
+      <span>run 299273b1</span>
+      <span>17 criteria evaluated</span>
+      <span>$0.90</span>
+    </div>
+  </div>
+</header>
+
+<hr class="jetbro-accent-line">
+
+<!-- ===================== SCORECARD ===================== -->
+<section class="scorecard" aria-labelledby="rec-h">
+  <div class="scorecard__verdict">
+    <h2 class="eyebrow" id="rec-h">Recommendation</h2>
+    <div class="verdict-figure">
+      <span class="verdict-figure__value">HOLD</span>
+      <span class="verdict-figure__qualifier">defer pending answers</span>
+    </div>
+    <p class="verdict-basis">
+      Red-flag weight <strong>11.0</strong> materially exceeds green-flag weight <strong>1.0</strong>;
+      the open questions should be answered before proceeding.
+    </p>
+    <p class="verdict-note">
+      This is a decision gate, not investment advice. The recommendation is computed
+      deterministically from the scorecard, not written by a model.
+    </p>
+  </div>
+
+  <!-- The weight scale. One shared baseline, one maximum (11.0), so the 11:1
+       asymmetry is a geometric fact on the page rather than two numbers the
+       reader has to compare mentally. -->
+  <div class="weight-scale">
+    <div class="weight-scale__head">
+      <h3 class="weight-scale__title">Weight of evidence</h3>
+      <span class="weight-scale__scale-note">scale 0 – 11.0</span>
+    </div>
+
+    <!-- The red bar is SEGMENTED by contributing criterion (3/3/2/3), separated
+         by a 2px surface gap. The scorecard total is therefore not an assertion:
+         the reader can see the four parts and add them up. -->
+    <div class="weight-row weight-row--red">
+      <div class="weight-row__label">
+        <span class="weight-row__glyph" aria-hidden="true">▲</span>
+        <span class="weight-row__name">Red flags fired</span>
+        <span class="weight-row__value">11.0</span>
+      </div>
+      <div class="weight-row__track weight-row__track--segmented" role="img"
+           aria-label="Red-flag weight 11.0 of an 11.0 scale — the full bar, made of four
+                       contributions: CR-0010 3.0, CR-0011 3.0, CR-0014 2.0, CR-0016 3.0">
+        <span class="seg" style="flex-grow:3" title="CR-0010 · HIGH × 1.0 = 3.0"><b>3.0</b></span>
+        <span class="seg" style="flex-grow:3" title="CR-0011 · HIGH × 1.0 = 3.0"><b>3.0</b></span>
+        <span class="seg" style="flex-grow:2" title="CR-0014 · MEDIUM × 1.0 = 2.0"><b>2.0</b></span>
+        <span class="seg" style="flex-grow:3" title="CR-0016 · HIGH × 1.0 = 3.0"><b>3.0</b></span>
+      </div>
+      <p class="weight-row__criteria">
+        CR-0010 <span class="dim">3.0</span> · CR-0011 <span class="dim">3.0</span> ·
+        CR-0014 <span class="dim">2.0</span> · CR-0016 <span class="dim">3.0</span>
+      </p>
+    </div>
+
+    <div class="weight-row weight-row--green">
+      <div class="weight-row__label">
+        <span class="weight-row__glyph" aria-hidden="true">●</span>
+        <span class="weight-row__name">Green flags fired</span>
+        <span class="weight-row__value">1.0</span>
+      </div>
+      <div class="weight-row__track weight-row__track--segmented" role="img"
+           aria-label="Green-flag weight 1.0 on the same 11.0 scale — one eleventh of the red bar.
+                       One contribution: CR-0033 1.0">
+        <span class="seg" style="flex-grow:1" title="CR-0033 · LOW × 1.0 = 1.0"></span>
+        <span class="seg seg--empty" style="flex-grow:10"></span>
+      </div>
+      <p class="weight-row__criteria">CR-0033 <span class="dim">1.0</span></p>
+    </div>
+
+    <!-- The formula, published by the engine. An IC that cannot reproduce the
+         arithmetic behind a recommendation is right to distrust it. -->
+    <details class="disclosure scoring-model">
+      <summary>How these totals are computed</summary>
+      <div class="disclosure__body">
+        <p class="formula">score contribution = severity multiplier × author weight,
+        summed over <em>fired</em> findings</p>
+        <div class="table-scroll">
+          <table class="data">
+            <caption>Severity multipliers</caption>
+            <thead>
+              <tr><th scope="col">Severity</th><th scope="col" class="num">Multiplier</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>LOW</td><td class="num">1.0</td></tr>
+              <tr><td>MEDIUM</td><td class="num">2.0</td></tr>
+              <tr><td>HIGH</td><td class="num">3.0</td></tr>
+              <tr><td>CRITICAL</td><td class="num">5.0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-scroll">
+          <table class="data">
+            <caption>Contributions to the red-flag weight</caption>
+            <thead>
+              <tr>
+                <th scope="col">Criterion</th><th scope="col">Severity</th>
+                <th scope="col" class="num">Multiplier</th><th scope="col" class="num">Author weight</th>
+                <th scope="col" class="num">Contribution</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>CR-0010</td><td>HIGH</td><td class="num">3.0</td><td class="num">1.0</td><td class="num">3.0</td></tr>
+              <tr><td>CR-0011</td><td>HIGH</td><td class="num">3.0</td><td class="num">1.0</td><td class="num">3.0</td></tr>
+              <tr><td>CR-0014</td><td>MEDIUM</td><td class="num">2.0</td><td class="num">1.0</td><td class="num">2.0</td></tr>
+              <tr><td>CR-0016</td><td>HIGH</td><td class="num">3.0</td><td class="num">1.0</td><td class="num">3.0</td></tr>
+              <tr class="total"><th scope="row" colspan="4">Red-flag weight</th><td class="num">11.0</td></tr>
+              <tr><td>CR-0033</td><td>LOW</td><td class="num">1.0</td><td class="num">1.0</td><td class="num">1.0</td></tr>
+              <tr class="total"><th scope="row" colspan="4">Green-flag weight</th><td class="num">1.0</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="contested-note">
+          <strong>CR-0014 is contested and still contributes 2.0</strong> — 18% of the red weight.
+          It is carried into the score on the strict reading. Accepting the lenient reading would
+          reduce the red weight to 9.0 — which lands <em>exactly on</em> the <code>hold</code>
+          threshold (red ≥ 9.0 and red &gt; 2 × green), so the recommendation still holds either way.
+          It does not turn on this contest, but it has no margin above it.
+          <a href="section.html#CR-0014">See both readings</a>
+        </p>
+      </div>
+    </details>
+
+    <div class="count-strip">
+      <div class="count-strip__item count-strip__item--red">
+        <span class="count-strip__value">4</span>
+        <span class="count-strip__label">Red fired</span>
+      </div>
+      <div class="count-strip__item count-strip__item--green">
+        <span class="count-strip__value">1</span>
+        <span class="count-strip__label">Green fired</span>
+      </div>
+      <div class="count-strip__item count-strip__item--amber">
+        <span class="count-strip__value">1</span>
+        <span class="count-strip__label">Contested</span>
+      </div>
+      <div class="count-strip__item count-strip__item--slate">
+        <span class="count-strip__value">2</span>
+        <span class="count-strip__label">Unevaluated</span>
+      </div>
+    </div>
+
+    <p style="font-family:var(--font-mono); font-size:var(--t-xs); color:var(--ink-3); margin-top:1rem;">
+      Lenient / strict agreement 82.4% · 17 criteria evaluated
+    </p>
+  </div>
+</section>
+
+<!-- ===================== THE VETO SENTENCE ===================== -->
+<section class="veto-statement" aria-labelledby="veto-h">
+  <div class="veto-statement__inner">
+    <h2 class="veto-statement__lead" id="veto-h">
+      No veto fired&nbsp;— but no veto was cleared either.
+    </h2>
+    <div class="veto-statement__detail">
+      <p>
+        The checks the unevaluated veto criteria depend on could not be performed, so they are
+        <strong>neither fired nor clean</strong>. This recommendation is made without them.
+      </p>
+      <p style="margin-bottom:0">
+        Nothing in this memo should be read as clearing the manager's registration status or its
+        enforcement history.
+      </p>
+      <div class="veto-statement__codes">
+        <span class="tier-badge tier-badge--veto">
+          <span aria-hidden="true">□</span> CR-0001 · No verifiable SEBI registration
+        </span>
+        <span class="tier-badge tier-badge--veto">
+          <span aria-hidden="true">□</span> CR-0002 · Undisclosed regulatory action
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BODY ===================== -->
+<div class="shell">
+
+  <!-- ---------- RAIL ---------- -->
+  <nav class="rail" aria-label="Memo sections">
+    <div class="rail__group">
+      <p class="eyebrow">Sections</p>
+      <ul class="rail__list">
+        <li><a class="rail__item" href="#" aria-current="page"><span class="rail__num">00</span><span>Index</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">01</span><span>Recommendation</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">02</span><span>Rationale</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">03</span><span>Fund Facts</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+        <li><a class="rail__item" href="section.html"><span class="rail__num">04</span><span>Risk Factors</span><span class="rail__badge rail__badge--red">4</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">05</span><span>Supporting Factors</span><span class="rail__badge rail__badge--quiet">1</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">06</span><span>Fees &amp; Terms</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">07</span><span>Team</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">08</span><span>Track Record</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">09</span><span>Contested</span><span class="rail__badge rail__badge--amber">1</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">10</span><span>Asks</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="open-questions.html"><span class="rail__num">11</span><span>Open Questions</span><span class="rail__badge rail__badge--slate">59</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">12</span><span>Sources</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+      </ul>
+    </div>
+
+    <div class="rail__group rail__group--key">
+      <p class="eyebrow">Provenance</p>
+      <div class="prov-key">
+        <div class="prov-key__row">
+          <span class="prov prov--document"><span class="prov__glyph" aria-hidden="true">✓</span> DOCUMENT</span>
+          <span class="prov-key__desc">Page citation, quote checked against the extracted page text.</span>
+        </div>
+        <div class="prov-key__row">
+          <span class="prov prov--attested"><span class="prov__glyph" aria-hidden="true">✎</span> ATTESTED</span>
+          <span class="prov-key__desc">An analyst supplied it and named a source. Recorded, attributed, dated.</span>
+        </div>
+        <div class="prov-key__row">
+          <span class="prov prov--unattested"><span class="prov__glyph" aria-hidden="true">○</span> UNSOURCED</span>
+          <span class="prov-key__desc">An analyst's word with no source. Never scored, never treated as evidence.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail__group">
+      <p class="rail__note">
+        <strong>⚙</strong> marks a section assembled mechanically from prior artifacts —
+        no model call. Sections 3, 6, 11 and 12.
+      </p>
+    </div>
+  </nav>
+
+  <!-- ---------- DOCUMENT ---------- -->
+  <main class="doc">
+
+    <!-- Open questions -->
+    <section class="doc-section" aria-labelledby="oq-h">
+      <h2 class="doc-section__title" id="oq-h">Open questions — 59</h2>
+
+      <p class="doc__lede">
+        59 questions could not be determined across the run. They are stated rather than omitted,
+        and several are more informative than the facts that were established — a fund that does not
+        disclose its sponsor commitment has told you something.
+      </p>
+
+      <div class="table-scroll">
+        <table class="data">
+          <caption>Routing — what to do with each kind</caption>
+          <thead>
+            <tr><th scope="col">Kind</th><th scope="col" class="num">Count</th><th scope="col">What to do</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="prov prov--document"><span class="prov__glyph" aria-hidden="true">✓</span> DOCUMENT</span>
+                  Answerable from a document we do not have</td>
+              <td class="num">36</td>
+              <td>Request the document</td>
+            </tr>
+            <tr>
+              <td><span class="prov prov--attested"><span class="prov__glyph" aria-hidden="true">✎</span> ATTESTED</span>
+                  Answerable by an analyst</td>
+              <td class="num">5</td>
+              <td>An analyst can settle it</td>
+            </tr>
+            <tr>
+              <td><span class="prov prov--unattested"><span class="prov__glyph" aria-hidden="true">□</span> BLOCKED</span>
+                  The check could not be performed</td>
+              <td class="num">18</td>
+              <td><strong>Do not ask the manager</strong> — see owner</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="do-not-ask">
+        <p class="do-not-ask__lead">18 of these are blocked, not open.</p>
+        <p>
+          The checks behind them could not be performed, so no answer from the manager would resolve
+          them. They must not be sent as manager questions.
+        </p>
+        <div class="owner-tally">
+          <span>Owners:</span>
+          <span>Infrastructure <b>10</b></span>
+          <span>Analyst (manual check) <b>5</b></span>
+          <span>Procurement <b>3</b></span>
+        </div>
+      </div>
+
+      <p><a href="open-questions.html" class="btn btn--primary">Full account of each &rarr;</a></p>
+    </section>
+
+    <!-- External diligence -->
+    <section class="doc-section" aria-labelledby="ext-h">
+      <h2 class="doc-section__title" id="ext-h">External diligence</h2>
+
+      <div class="split">
+        <div>
+          <div class="count-strip" style="grid-template-columns:repeat(2,minmax(0,1fr)); border-top:0; padding-top:0;">
+            <div class="count-strip__item count-strip__item--green">
+              <span class="count-strip__value">1</span>
+              <span class="count-strip__label">Passed</span>
+            </div>
+            <div class="count-strip__item count-strip__item--slate">
+              <span class="count-strip__value">6</span>
+              <span class="count-strip__label">Unavailable</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:var(--t-sm); color:var(--ink-2)">
+            An <code>unavailable</code> check <strong>was not performed</strong>. It is never a clean
+            result. Only corporate identity was verified; nothing in this fund's regulatory standing
+            has been checked.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Citation verification -->
+    <section class="doc-section" aria-labelledby="cv-h">
+      <h2 class="doc-section__title" id="cv-h">Citation verification</h2>
+      <p style="max-width:var(--measure)">
+        105 citations across 22 pages. Every quote was checked against the text of the page it cites.
+        <strong>101 of 105 matched.</strong> The 4 that did not are shown in place and marked — they
+        cluster on multi-line table layouts where whitespace is not reproducible.
+      </p>
+      <div class="table-scroll">
+        <table class="data">
+          <caption>Verdicts across all citations</caption>
+          <thead>
+            <tr><th scope="col">Verdict</th><th scope="col" class="num">n</th><th scope="col">What it means</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="cite__verdict" style="color:var(--st-green)" aria-hidden="true">✓</span> Verified exact</td>
+              <td class="num">61</td>
+              <td>Found character-for-character on the cited page</td>
+            </tr>
+            <tr>
+              <td><span class="cite__verdict" style="color:var(--st-amber)" aria-hidden="true">▨</span> Layout-normalised</td>
+              <td class="num">5</td>
+              <td>Matched after normalising whitespace across a column splice</td>
+            </tr>
+            <tr>
+              <td><span class="cite__verdict" style="color:var(--ink-3)" aria-hidden="true">○</span> Not confirmed</td>
+              <td class="num">4</td>
+              <td>Retained and shown; the extractor could not confirm it on that page</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:var(--t-sm); color:var(--ink-3); max-width:var(--measure)">
+        Counts are over the scoring stage's finding evidence (70 citations); the 105 figure covers
+        every citation in the run, including classification and extraction.
+      </p>
+    </section>
+
+    <!-- Section index -->
+    <section class="doc-section" aria-labelledby="sec-h">
+      <h2 class="doc-section__title" id="sec-h">Sections</h2>
+      <ul class="section-index">
+        <li><a class="section-index__item" href="#"><span class="section-index__num">01</span><span class="section-index__name">Recommendation</span><span class="section-index__for">IC</span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">02</span><span class="section-index__name">Rationale</span><span class="section-index__for">IC</span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">03</span><span class="section-index__name">Fund Facts</span><span class="section-index__for">IC, ODD<span class="section-index__mech">⚙ mechanical</span></span></a></li>
+        <li><a class="section-index__item" href="section.html"><span class="section-index__num">04</span><span class="section-index__name">Risk Factors</span><span class="section-index__for">IC</span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">05</span><span class="section-index__name">Supporting Factors</span><span class="section-index__for">IC</span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">06</span><span class="section-index__name">Fees and Terms</span><span class="section-index__for">IC, ODD<span class="section-index__mech">⚙ mechanical</span></span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">07</span><span class="section-index__name">Team</span><span class="section-index__for">ODD</span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">08</span><span class="section-index__name">Track Record</span><span class="section-index__for">IC, ODD</span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">09</span><span class="section-index__name">Contested Findings</span><span class="section-index__for">Analyst</span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">10</span><span class="section-index__name">Asks</span><span class="section-index__for">Analyst</span></a></li>
+        <li><a class="section-index__item" href="open-questions.html"><span class="section-index__num">11</span><span class="section-index__name">Open Questions</span><span class="section-index__for">Analyst<span class="section-index__mech">⚙ mechanical</span></span></a></li>
+        <li><a class="section-index__item" href="#"><span class="section-index__num">12</span><span class="section-index__name">Sources</span><span class="section-index__for">Analyst, ODD<span class="section-index__mech">⚙ mechanical</span></span></a></li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="colophon">
+  <hr class="jetbro-accent-line" style="margin-bottom:1.5rem">
+  <p>
+    Generated by the L1 Analysis Engine. Sections 3, 6, 11 and 12 are mechanical renders of prior
+    artifacts with no model generation. The recommendation is computed from the scorecard, not written
+    by a model. Every number in every section file was checked against an extracted value before any
+    of them were written.
+  </p>
+  <p style="font-family:var(--font-mono); font-size:var(--t-xs); margin-top:1rem">
+    Run 299273b1-4ad1-4ce2-9a18-0bedf7dd67a9 · engine 0.1.0 · source sha256 2b176083b293… ·
+    criteria sha256 94ec11dfc262… · run cost $0.90
+  </p>
+</footer>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>

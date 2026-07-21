@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11. Open Questions — MEMO-2026-0007</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside class="draft-banner" role="note" aria-label="Draft criteria set warning">
+  <div class="draft-banner__inner">
+    <span class="draft-banner__mark">DRAFT</span>
+    <div class="draft-banner__body">
+      <p><strong>These findings were produced from a DRAFT criteria set.</strong>
+      <code>CS-2026-0001</code> carries no version number. Treat the findings as indicative of what this
+      rule set would flag, <strong>not as an assessment against an agreed house view.</strong>
+      <a href="#">What this means</a></p>
+    </div>
+  </div>
+</aside>
+
+<header class="masthead">
+  <div class="masthead__inner">
+    <div class="masthead__top">
+      <div class="masthead__logo">
+        <svg viewBox="0 0 473 260" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JetBro">
+          <path d="M61.0288 182.62C49.6922 217.15 37.2201 240.256 23.6127 251.94C17.5024 257.296 12.3281 260 8.14186 260C3.43559 260 1.04346 258.856 0.939453 256.36C0.939453 255.632 1.51148 255.086 2.65555 254.748C3.25112 254.613 3.82158 254.385 4.34565 254.072C10.4993 252.061 16.5663 247.199 22.5467 239.485C24.4884 236.884 26.227 234.137 27.747 231.268C37.5533 211.276 45.3907 190.376 51.1483 168.865C57.6486 145.446 65.9951 108.706 76.1876 58.6447C76.7597 56.2786 77.8777 51.5203 79.5938 44.4219C81.3099 37.3235 82.532 32.1232 83.3121 28.821L85.4702 19.7465C85.8043 17.5959 86.8046 15.6043 88.3303 14.0522C90.7219 12.7827 93.4384 12.2575 96.1308 12.5441C96.5947 12.5072 97.0611 12.5687 97.4996 12.7247C97.938 12.8807 98.3386 13.1276 98.6749 13.4492C99.0113 13.7708 99.2758 14.1599 99.4513 14.591C99.6267 15.022 99.7091 15.4852 99.693 15.9503C98.9052 20.6381 97.8724 25.2814 96.5988 29.8611C94.6227 38.2162 89.7777 61.0628 82.064 98.4009C74.3502 135.739 67.3385 163.812 61.0288 182.62Z" fill="currentColor"/>
+          <path d="M163.319 118.344C167.557 113.82 169.897 113.144 170.417 115.978C170.129 117.904 169.457 119.752 168.441 121.412C163.393 130.371 157.118 138.58 149.798 145.802C136.537 159.426 124.819 166.291 114.644 166.395C110.161 166.511 105.782 165.027 102.294 162.209C95.8798 156.887 92.673 147.63 92.673 134.439C92.673 126.985 94.9524 116.489 99.5113 102.951C104.072 89.4474 111.216 76.96 120.547 66.1853C124.741 60.829 129.075 58.1508 133.547 58.1508C135.741 58.1865 137.906 58.6548 139.918 59.5289C142.211 60.29 144.203 61.7609 145.605 63.7287C147.007 65.6965 147.747 68.0594 147.718 70.4755C147.62 71.7157 147.367 72.9387 146.964 74.1157C142.466 82.5157 137.013 90.3681 130.713 97.517C124.145 105.568 116.528 112.704 108.066 118.734C105.752 126.115 104.389 133.76 104.01 141.485C103.92 144.957 104.05 148.431 104.4 151.886C105.154 155.396 107.988 157.086 112.876 157.086C117.764 157.086 123.277 154.85 129.595 150.352C136.733 145.046 143.374 139.102 149.434 132.593C156.507 125.235 160.511 121.074 161.473 120.164C162.125 119.597 162.742 118.989 163.319 118.344V118.344ZM113.916 99.6231C115.606 99.3631 119.116 95.7749 124.785 88.8065C130.453 81.8381 133.131 76.4038 133.131 72.4776C133.095 71.7683 132.881 71.0796 132.507 70.4755C128.667 75.0057 125.14 79.7924 121.951 84.8023C116.664 92.6894 114.02 97.6297 114.02 99.6231H113.916Z" fill="currentColor"/>
+          <path d="M200.085 63.9492L245.613 62.9351C246.532 62.9351 247.546 63.8018 248.655 65.5353C249.857 67.554 250.469 69.8688 250.423 72.2176C250.423 74.0638 247.823 75.0518 243.169 75.1298C226.43 75.7362 209.751 77.4736 193.246 80.3301C191.773 84.4037 189.372 90.28 186.044 97.9591C172.176 131.969 164.913 155.804 164.255 169.463C164.238 176.203 165.573 182.879 168.181 189.094C172.74 199.651 179.535 204.929 188.566 204.929C194.89 205.149 201.108 203.265 206.247 199.573C212.57 194.408 218.245 188.498 223.148 181.97C225.176 179.37 227.282 178.46 229.492 179.214C230.533 179.646 231.405 180.405 231.977 181.375C232.549 182.346 232.79 183.476 232.664 184.596C232.664 192.292 228.209 198.715 219.3 203.863C210.634 208.972 200.758 211.666 190.698 211.663C185.756 211.712 180.856 210.744 176.303 208.821C171.749 206.898 167.64 204.06 164.229 200.483C156.792 193.012 153.074 183.079 153.074 170.685C153.16 161.671 154.215 152.692 156.22 143.904C159.147 131.791 162.962 119.911 167.635 108.36L178.581 80.1481C161.004 80.1481 151.193 79.9314 149.148 79.4981C142.881 78.198 139.683 75.6498 139.605 71.8536C139.605 70.6316 140.645 69.8775 142.491 69.5395L183.47 65.7953L210.459 20.3708C213.579 15.1705 216.405 12.5703 218.936 12.5703C220.127 12.5654 221.314 12.7051 222.472 12.9863C227.438 14.0784 229.908 15.8465 229.908 18.3426C229.908 20.8388 227.308 24.583 222.342 29.7053C217.376 34.8276 214.177 38.0777 213.007 39.5078C207.591 47.0184 203.242 55.2439 200.085 63.9492V63.9492Z" fill="currentColor"/>
+          <path d="M263.814 3.46972C264.828 1.2856 267.142 0.11553 270.756 0.0115247C274.371 -0.0924811 276.737 0.50555 277.881 1.88363C278.78 2.7917 279.356 3.97032 279.519 5.23782C279.433 6.15828 279.14 7.04731 278.661 7.83796C264.169 32.73 255.45 54.2765 252.503 72.4776C257.777 69.1028 263.873 67.2328 270.132 67.0692C275.818 67.0692 279.736 69.21 281.885 73.4916C282.686 75.2724 283.085 77.2075 283.055 79.1599C283.055 85.2963 279.042 97.6903 271.016 116.342C262.991 134.994 254.609 149.45 245.873 159.712C240.465 165.918 235.862 169.064 232.066 169.151C227.126 169.151 224.448 163.526 224.032 152.276C224.032 151.184 224.032 150.118 224.032 149.13C224.032 140.463 226.485 127.358 231.39 109.816C236.296 92.2733 247.104 56.8247 263.814 3.46972ZM236.304 135.505C236.068 137.742 235.946 139.99 235.94 142.239C235.94 144.476 236.85 145.646 238.723 145.724C242.761 145.724 248.473 138.539 255.857 124.168C262.303 112.113 267.446 99.4041 271.198 86.2583C271.846 84.0137 272.23 81.7014 272.342 79.3679C272.342 77.8338 271.666 77.0538 270.314 77.0538C261.214 77.0538 253.171 84.7762 246.185 100.221C241.083 111.399 237.749 123.303 236.304 135.505V135.505Z" fill="currentColor"/>
+          <path d="M335.474 82.2022L335.214 83.8402L334.98 85.3743C334.98 87.3678 332.033 95.4282 326.14 109.556C320.246 123.683 317.308 133.676 317.325 139.535C317.507 149.546 319.925 154.59 324.631 154.668C329.338 154.746 336.228 149.468 345.433 138.911C356.353 126.292 363.027 116.758 365.454 110.31C367.898 104.017 369.796 100.845 371.122 100.845C372.448 100.845 372.812 102.119 372.89 104.381C372.974 106.096 372.718 107.811 372.136 109.426L370.68 112.962C366.399 123.335 360.674 133.052 353.675 141.823C342.477 156.471 332.545 163.795 323.877 163.795C321.201 163.813 318.575 163.064 316.311 161.637C310.617 158.022 307.757 151.236 307.757 141.225C308.001 136.13 308.741 131.071 309.967 126.119C311.423 119.306 312.151 115.718 312.099 115.094C312.047 114.47 311.293 113.924 309.759 113.248C306.742 111.922 304.74 111.74 303.726 112.754C302.712 113.768 299.176 123.076 292.676 140.055C286.175 157.034 281.573 165.511 279.129 165.511C277.603 165.256 276.134 164.736 274.787 163.977C273.888 163.696 273.098 163.147 272.521 162.403C271.945 161.659 271.61 160.756 271.562 159.816C272.504 157.156 273.598 154.551 274.839 152.016L281.781 135.999C286.635 124.767 292.346 109.781 298.916 91.0426L315.661 43.668C316.077 42.4719 317.429 41.8479 319.691 41.7699H322.967C326.998 41.7699 329.026 43.252 329.026 46.1901C329.026 47.6116 326.842 53.9039 322.473 65.0672C318.963 73.477 316.103 82.1435 313.919 90.9906L313.477 94.6828C313.477 95.7749 313.685 96.399 314.101 96.581C315.378 94.8419 316.459 92.9671 317.325 90.9906L320.601 84.5683C321.212 83.6116 321.718 82.5916 322.109 81.5261C323.947 78.0593 326.131 76.3258 328.662 76.3258C333.03 76.3258 335.292 78.1979 335.474 81.7341V82.2022Z" fill="currentColor"/>
+          <path d="M462.595 42.2639L461.971 27.4171C461.971 24.4876 463.115 22.9275 465.403 22.7368C466.321 22.7542 467.219 23.0144 468.004 23.4909C469.266 24.0789 470.328 25.0267 471.054 26.2155C471.78 27.4044 472.139 28.7812 472.086 30.1733C471.646 37.1427 469.881 43.9643 466.885 50.2724C464.423 56.6415 461.313 62.7406 457.603 68.4734C454.376 73.0092 450.073 76.6734 445.082 79.1375C440.09 81.6016 434.565 82.7886 429.001 82.5922C424.738 82.2527 420.549 81.28 416.573 79.706C412.599 78.1194 408.409 77.1378 404.144 76.7939C402.376 76.7939 400.972 79.394 399.984 84.5943C399.88 84.941 398.909 91.7014 397.072 104.875C394.298 124.775 389.696 139.223 383.265 148.22C374.996 160.649 368.435 166.863 363.582 166.863C358.381 166.447 355.417 162.651 354.819 155.526C355.235 146.027 359.335 129.308 367.118 105.369C374.901 81.4308 381.289 66.1073 386.281 59.3989C387.867 57.3188 390.675 56.5647 394.679 57.1368C396.188 57.4748 396.968 59.1649 397.02 62.181C396.932 62.7856 396.982 63.4021 397.165 63.985C397.347 64.5679 397.658 65.1024 398.075 65.549C398.492 65.9957 399.003 66.3431 399.572 66.5658C400.141 66.7884 400.753 66.8805 401.362 66.8353C406.536 67.3424 411.613 68.5767 416.443 70.5015C422.053 72.6418 427.969 73.8707 433.968 74.1417C438.751 74.0905 443.452 72.8864 447.67 70.6315C457.62 65.5179 462.595 56.062 462.595 42.2639ZM394.341 73.0237C390.875 73.0237 385.744 83.5196 378.949 104.511C372.154 125.503 368.747 137.533 368.73 140.601C368.73 143.67 368.86 145.204 369.38 145.204C372.466 145.204 377.865 137.629 385.579 122.478C393.293 107.328 397.141 94.3275 397.124 83.4762V81.9681C396.864 75.9878 395.954 73.0237 394.341 73.0237Z" fill="currentColor"/>
+        </svg>
+        <span class="masthead__logo-div">L1 Analysis</span>
+      </div>
+      <div style="display:flex; align-items:flex-start; gap:1.5rem;">
+        <div class="masthead__ids">MEMO-2026-0007 · v1<br><span class="dim">DL-2026-0007</span></div>
+        <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="false">Theme</button>
+      </div>
+    </div>
+
+    <p class="eyebrow"><a href="index.html" style="color:inherit">Neo Infra Income Opportunities Fund II</a> · Neo Asset Management Private Limited</p>
+    <h1 style="font-size:var(--t-xl); max-width:none">11. Open Questions</h1>
+
+    <div class="masthead__meta">
+      <span>Written for: Analyst</span>
+      <span>59 items</span>
+      <span>⚙ assembled mechanically — no model call</span>
+      <span>non-excludable from any export</span>
+    </div>
+  </div>
+</header>
+
+<hr class="jetbro-accent-line">
+
+<div class="shell">
+
+  <!-- ---------- RAIL ---------- -->
+  <nav class="rail" aria-label="Memo sections">
+    <div class="rail__group">
+      <p class="eyebrow">Sections</p>
+      <ul class="rail__list">
+        <li><a class="rail__item" href="index.html"><span class="rail__num">00</span><span>Index</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">01</span><span>Recommendation</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">02</span><span>Rationale</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">03</span><span>Fund Facts</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+        <li><a class="rail__item" href="section.html"><span class="rail__num">04</span><span>Risk Factors</span><span class="rail__badge rail__badge--red">4</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">05</span><span>Supporting Factors</span><span class="rail__badge rail__badge--quiet">1</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">06</span><span>Fees &amp; Terms</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">07</span><span>Team</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">08</span><span>Track Record</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">09</span><span>Contested</span><span class="rail__badge rail__badge--amber">1</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">10</span><span>Asks</span><span class="rail__badge rail__badge--quiet"></span></a></li>
+        <li><a class="rail__item" href="open-questions.html" aria-current="page"><span class="rail__num">11</span><span>Open Questions</span><span class="rail__badge rail__badge--slate">59</span></a></li>
+        <li><a class="rail__item" href="#"><span class="rail__num">12</span><span>Sources</span><span class="rail__badge rail__badge--quiet" title="assembled mechanically">⚙</span></a></li>
+      </ul>
+    </div>
+
+    <div class="rail__group rail__group--key">
+      <p class="eyebrow">By kind</p>
+      <ul class="rail__list">
+        <li><a class="rail__item" href="#doc"><span class="rail__num">✓</span><span>Document</span><span class="rail__badge rail__badge--quiet" style="color:var(--st-green)">36</span></a></li>
+        <li><a class="rail__item" href="#analyst"><span class="rail__num">✎</span><span>Analyst</span><span class="rail__badge rail__badge--amber">5</span></a></li>
+        <li><a class="rail__item" href="#blocked"><span class="rail__num">□</span><span>Blocked</span><span class="rail__badge rail__badge--slate">18</span></a></li>
+      </ul>
+    </div>
+
+    <div class="rail__group">
+      <p class="rail__note">
+        <strong>Items repeat across stages.</strong> The same gap found at extraction and again at
+        scoring is listed twice, because each occurrence records a different search. 59 is the count of
+        occurrences, not of distinct facts.
+      </p>
+    </div>
+  </nav>
+
+  <!-- ---------- DOCUMENT ---------- -->
+  <main class="doc">
+
+    <div class="engine-note">
+      <p>Every <code>unresolved</code> entry from every stage of the run, with the full account of what
+      was searched for and where. <strong>This section is non-negotiable: a memo that omits what it could
+      not establish presents partial analysis as complete.</strong> Things to ask the manager about
+      findings that DID fire are <a href="#">section 10</a>.</p>
+    </div>
+
+    <p class="doc__lede">
+      <strong>59 open questions</strong> could not be determined across the run. They are stated rather
+      than omitted, and several are more informative than the facts that were established — a fund that
+      does not disclose its sponsor commitment has told you something.
+    </p>
+
+    <p class="doc__standfirst">
+      Each entry carries the full account of what was searched for, where the engine looked, and what it
+      found instead. That account is the reason this is a <em>worklist and not a disclaimer</em>: it
+      records what has already been ruled out, so the same search is not repeated by hand.
+    </p>
+
+    <!-- Kind jump -->
+    <nav class="kind-jump" aria-label="Jump to a question kind">
+      <a href="#doc" class="k-doc"><span class="n">36</span> Answerable from a document</a>
+      <a href="#analyst" class="k-analyst"><span class="n">5</span> Answerable by an analyst</a>
+      <a href="#blocked" class="k-blocked"><span class="n">18</span> Blocked — no answer exists</a>
+    </nav>
+
+    <!-- ================= BAND 1: DOCUMENT-ANSWERABLE ================= -->
+    <section class="kind-band kind-band--doc" id="doc" aria-labelledby="doc-h">
+      <div class="kind-band__head">
+        <div class="kind-band__title">
+          <span class="kind-band__count">36</span>
+          <h2 id="doc-h">Answerable from a document we do not have</h2>
+        </div>
+        <p class="kind-band__instruction">
+          Request the document named as the typical source. <strong>These are the questions a manager
+          can close by sending a file.</strong>
+        </p>
+      </div>
+
+      <!-- The bulk affordance: the count with an affordance is a co-pilot;
+           the count alone is a complaint. -->
+      <div class="bulk">
+        <p class="bulk__text">
+          <strong>32 of these 36 name the Private Placement Memorandum as the typical source.</strong>
+          Upload one and re-run, and the analysis answers them together rather than one at a time.
+        </p>
+        <a class="btn btn--primary" href="#">Upload a PPM &rarr;</a>
+      </div>
+
+      <h3 class="stage-head">From classification — 1</h3>
+
+      <article class="q q--doc" id="sebi_registration">
+        <h4 class="q__key">sebi_registration</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for a registration number in the form 'IN/AIF2/', 'IN/AIF',
+          'Registration No', 'Regn', 'SEBI Reg'. The only SEBI reference in the deck is on page 37, the
+          Terms table, which states 'SEBI registered Category II AIF' as a descriptive phrase with no
+          number. Page 37 also lists service providers (EY, Trilegal, PWC, ICICI Bank, Kfintech) and the
+          Investment Manager name, but no registration number. The disclaimer pages 51 and 52 name 'Neo
+          Asset Management Pvt Ltd' repeatedly but carry no SEBI registration number either.
+          <strong>No number appears anywhere in the document.</strong>
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <h3 class="stage-head">From extraction — 10</h3>
+
+      <article class="q q--doc" id="economics.gp_commitment">
+        <h4 class="q__key">economics.gp_commitment</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'sponsor commitment', 'GP commitment', 'continuing interest', 'skin
+          in the game', 'Sponsor'. Page 37 gives the full fund terms table and page 38 gives the complete
+          fee/carry/hurdle schedule by unit class, but neither states any sponsor or manager commitment.
+          <strong>No sponsor commitment figure appears anywhere in the deck</strong>; page 37 footnote
+          reads '*For more details refer PPM'.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="fund_terms.first_close_status">
+        <h4 class="q__key">fund_terms.first_close_status</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'first close', 'initial close', 'final close', 'commitments raised',
+          'fundraise status'. Page 37 references the term as '7 years from first close' and the timeline
+          graphic is labelled 'Initial Close', but no date, no status, and no amount raised at first
+          close is stated for NIIOF-II. Page 13 gives NIIOF-I's status ('Fund fully committed'), not
+          NIIOF-II's.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="track_record.realised_dpi">
+        <h4 class="q__key">track_record.realised_dpi</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>audited accounts</strong></span>
+          <span class="affects">affects CR-0011, CR-0031</span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'DPI', 'distributions to paid-in', 'realised', 'realized', 'capital
+          returned', 'exits'. Page 13 states NIIOF-I is 'already accruing cashflows' and gives
+          distribution rates ('~12-13% for FY26' and '~8.2% in FY25'); page 17 marks deals 'Completed' or
+          'Committed', but 'Completed' there denotes acquisition completion, not exit. <strong>No DPI
+          multiple, no distributed capital amount, and no realised exit from NIIOF-I is stated
+          anywhere.</strong>
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="team.key_person_clause">
+        <h4 class="q__key">team.key_person_clause</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+          <span class="affects">affects CR-0012</span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'key person', 'key man', 'keyman', 'suspension of investment period',
+          'departure'. Pages 5, 33, 34, 35 and 44-50 profile the team extensively and page 37 gives the
+          fund terms table, but no key-person clause, trigger, or consequence is described anywhere. The
+          terms table on page 37 contains no key-person row.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="portfolio_construction.concentration_limits">
+        <h4 class="q__key">portfolio_construction.concentration_limits</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+          <span class="affects">affects CR-0014</span>
+        </p>
+        <p class="q__body">
+          Page 23 states portfolio-level floors ('Atleast 80%' into operating long-duration contracted
+          assets; 'Atleast 80% of Fund concentrated within roads and solar') and page 20 gives the 80/20
+          strategy split. Searched all 52 pages for 'single investment', 'per investment cap', 'maximum
+          exposure', 'not exceed', 'diversification limit' — <strong>NO single-investment or
+          single-issuer concentration cap is stated anywhere.</strong> What is recorded is a strategy
+          allocation floor, not an investment-level cap.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="economics.net_return_disclosed">
+        <h4 class="q__key">economics.net_return_disclosed</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+          <span class="affects">affects CR-0010</span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'net of fees', 'net IRR', 'net to investor', 'post-fee', 'after
+          fees'. <strong>NO net-of-fees return figure appears anywhere.</strong> Every return figure in
+          the deck is gross — pages 4, 13, 17, 19, 20, 21, 22, 25 and 42. Page 52 confirms explicitly
+          that 'all returns are presented on a "gross" basis'. The investor-level net return cannot be
+          established from this deck.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <details class="disclosure" style="margin-bottom:3rem">
+        <summary>4 more from extraction</summary>
+        <div class="disclosure__body">
+          <p><code>fund_terms.minimum_commitment</code> — the deck never uses 'minimum commitment',
+          'minimum investment' or 'minimum ticket'. Page 38's class table gives the lowest contribution
+          band as 'A1 1-2.99 Crs', from which INR 1 crore is the implied floor — a deduction from the
+          class structure rather than a stated minimum.</p>
+          <p><code>portfolio_construction.geography</code> — the terms table on page 37 contains no
+          geography row. India is deduced from the counterparties and assets named throughout — NHAI,
+          NTPC, MORTH, SECI (page 14) — hence confidence medium; the value records a deduction, not a
+          stated mandate.</p>
+          <p><code>team.investment_committee</code> — page 28 states the IC has 'Independent industry
+          experts on IC'; page 27 says the 'Investment committee managed India's first offshore and first
+          domestic Infra fund'. <strong>NO IC member is named anywhere</strong>, and the split between
+          independent and internal members is not given.</p>
+          <p><code>service_providers.banker</code> — page 37 names exactly five providers. Searched all
+          52 pages for 'banker', 'escrow', 'trustee', 'placement agent', 'administrator' — none named.</p>
+        </div>
+      </details>
+
+      <h3 class="stage-head">From scoring — 25</h3>
+
+      <article class="q q--doc" id="governance.valuation_policy">
+        <h4 class="q__key">governance.valuation_policy</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+          <span class="affects">affects CR-0016</span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'valuation policy', 'valuer', 'independent valuation', 'fair value',
+          'mark-to-model', 'valuation methodology', 'NAV'. 'Valuation' appears only four times and never
+          as a policy. 'Valuer', 'independent valuation', 'fair value' and 'mark-to-model' return
+          <strong>zero hits across all 52 pages</strong>. This is material because NIIOF-I's headline
+          'tracking gross IRR of ~21%' (pages 13, 17) is entirely a mark on unexited assets.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="economics.management_fee.basis">
+        <h4 class="q__key">economics.management_fee.basis</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+          <span class="affects">affects CR-0034, CR-0013</span>
+        </p>
+        <p class="q__body">
+          Searched pages 37 and 38 and all 52 pages for 'on commitments', 'committed capital', 'drawn
+          capital', 'NAV', 'net asset value', 'capital contributions', 'invested capital'.
+          <strong>NONE appears.</strong> Page 38 states only 'Management Fees p.a.' above four rates
+          (2.00%/1.75%/1.50%/1.25%) with no denominator; page 37's terms table carries no fee row at all.
+          Whether the fee applies to committed capital, drawn capital or NAV is economically material
+          over a 7-year term with 6 drawdowns, and it is unstated.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="economics.distribution_waterfall">
+        <h4 class="q__key">economics.distribution_waterfall</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+          <span class="affects">affects CR-0034</span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'waterfall', 'distribution waterfall', 'return of capital',
+          'preferred return', 'clawback', 'tier'. <strong>'Waterfall' returns zero hits.</strong> The only
+          worked numeric example is page 42's 'Conceptual illustration of IRR build-up' — an asset-level
+          return build-up that models neither management fees nor carried interest nor the LP/GP split
+          through the 10% hurdle, so it cannot substitute for a distribution waterfall.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="team.investment_committee.members">
+        <h4 class="q__key">team.investment_committee.members</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>Private Placement Memorandum</strong></span>
+          <span class="affects">affects CR-0035</span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'IC member', 'Investment Committee members', 'committee comprises',
+          and cross-checked every named individual on pages 5, 33, 34, 35 and 44-50 for an IC-membership
+          label — <strong>none carries one.</strong> The deck names roughly twenty people with titles such
+          as 'CIO', 'Managing Director' and 'Risk Head', yet never states who sits on the Investment
+          Committee. Authority is established but composition and independence are asserted without
+          names.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--doc" id="lp_base.named_anchor_investors">
+        <h4 class="q__key">lp_base.named_anchor_investors</h4>
+        <p class="q__route">
+          <span>usually answered by the <strong>DDQ response</strong></span>
+          <span class="affects">affects CR-0032</span>
+        </p>
+        <p class="q__body">
+          Searched all 52 pages for 'anchor', 'anchor investor', 'LP', 'limited partner', 'commitments
+          from', 'insurer', 'sovereign', 'DFI'. <strong>No anchor or prior-fund investor in NIIOF-I or
+          NIIOF-II is named anywhere.</strong> Page 3 names Mitsubishi UFJ Financial Group and Peak XV
+          under 'Partnership with High Quality Investors', but these are backers of the Neo Group
+          platform rather than LPs of either fund, and the third entity is unnamed ('USA based family
+          office').
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Upload a document</a>
+          <a class="btn" href="#">I can answer this myself</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <details class="disclosure">
+        <summary>20 more from scoring</summary>
+        <div class="disclosure__body">
+          <p>The remaining scoring-stage items restate the same gaps found at a second point in the run,
+          each with its own search record: <code>economics.gp_commitment</code> (×3),
+          <code>economics.net_return_to_investor</code>, <code>track_record.realised_dpi</code> (×2),
+          <code>team.key_person_clause</code> (×2), <code>portfolio_construction.single_investment_cap</code>
+          (×2), <code>sebi_registration.number</code> (×2), <code>fund_terms.first_close_status</code> (×2),
+          <code>governance.valuation_policy</code>, <code>team.investment_committee.members</code>,
+          <code>economics.management_fee.basis</code>, <code>economics.distribution_waterfall</code>,
+          <code>investors.anchor_lps</code>, and <code>service_providers.due_diligence_firms</code>.</p>
+          <p><strong>These are deliberately not deduplicated.</strong> An item found at extraction and
+          again at scoring records two independent searches with different search-term lists, and
+          collapsing them would discard the second search record — which is the part of §11 that makes it
+          a worklist rather than a disclaimer.</p>
+          <p><em>Illustrative in this prototype:</em> the full text of each of these 20 is in the source
+          memo file; they are summarised here to keep the prototype page readable. In the product every
+          one renders in full, exactly like the five above.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ================= BAND 2: ANALYST-ANSWERABLE ================= -->
+    <section class="kind-band kind-band--analyst" id="analyst" aria-labelledby="analyst-h">
+      <div class="kind-band__head">
+        <div class="kind-band__title">
+          <span class="kind-band__count">5</span>
+          <h2 id="analyst-h">Answerable by an analyst</h2>
+        </div>
+        <p class="kind-band__instruction">
+          An analyst can resolve these with judgement or a manual check — <strong>no new document and no
+          infrastructure change is required.</strong>
+        </p>
+      </div>
+
+      <div class="blocked-notice" style="background:var(--tint-amber); border-color:color-mix(in srgb, var(--st-amber) 30%, transparent); margin-bottom:2rem">
+        <span class="blocked-notice__glyph" style="color:var(--st-amber)" aria-hidden="true">✎</span>
+        <div>
+          <p style="margin-bottom:0">An answer here is recorded as <strong>ANALYST-ATTESTED, not
+          document-grounded</strong>. It appears in the memo attributed to you, with your source and
+          today's date. <strong>A source is required</strong> — an attestation without one is an
+          unsourced assertion entering an evidence-graded system, which is the one thing this platform
+          exists to prevent.</p>
+        </div>
+      </div>
+
+      <h3 class="stage-head">From extraction — 4</h3>
+
+      <article class="q q--analyst" id="economics.management_fee.normalised">
+        <h4 class="q__key">economics.management_fee.normalised</h4>
+        <p class="q__route"><span>analyst judgement — no document required</span></p>
+        <p class="q__body">
+          Page 38 gives four distinct management fee rates tiered by commitment class (A1 2.00%, A2
+          1.75%, A3 1.50%, A4 1.25% p.a.). <strong>A single normalised scalar cannot represent a
+          four-tier schedule without selecting a class</strong>, which the document does not do.
+          Separately, the fee BASIS is not stated. <code>normalised</code> set to null,
+          <code>as_written</code> preserved in full.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Answer with a source</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--analyst" id="economics.carry.normalised">
+        <h4 class="q__key">economics.carry.normalised</h4>
+        <p class="q__route"><span>analyst judgement — no document required</span></p>
+        <p class="q__body">
+          Page 38 gives four distinct carry rates tiered by commitment class (A1 20.0%, A2 15.0%, A3
+          12.5%, A4 10.0%), all without catch-up over a 10% hurdle. A single normalised scalar cannot
+          represent the four-tier schedule without selecting a class, which the document does not do.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Answer with a source</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--analyst" id="economics.waterfall_example_present">
+        <h4 class="q__key">economics.waterfall_example_present</h4>
+        <p class="q__route"><span>analyst judgement — no document required</span></p>
+        <p class="q__body">
+          Page 42 presents a 'Conceptual illustration of IRR build-up' running from project cost through
+          bank debt, interest cost, net income for the equity investor, exit value and exit premium to a
+          20% fund return. <strong>This is an ASSET-level return build-up, not a distribution
+          waterfall</strong> showing the split of proceeds between LPs and the GP through hurdle,
+          catch-up and carry tiers. Recorded 'yes' at medium confidence; an analyst should note it does
+          not model the fee/carry waterfall.
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Answer with a source</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <article class="q q--analyst" id="fund_terms.target_return_basis">
+        <h4 class="q__key">fund_terms.target_return_basis</h4>
+        <p class="q__route"><span>analyst judgement — no document required</span></p>
+        <p class="q__body">
+          Page 37's terms table labels the headline figure only as 'Expected IRR ~ 18-20% p.a.' with no
+          gross/net qualifier at that location. The gross basis is established elsewhere and
+          unambiguously: page 20 states 'targeting aggregate portfolio gross IRR of ~18-20% p.a.'.
+          Recorded as gross, cited to page 20. <strong>Flagged because the headline terms page itself does
+          not carry the qualifier.</strong>
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="#">Answer with a source</a>
+          <a class="btn" href="#">Not applicable</a>
+        </div>
+      </article>
+
+      <h3 class="stage-head">From scoring — 1</h3>
+
+      <article class="q q--analyst" id="q-CR-0014">
+        <h4 class="q__key">CR-0014</h4>
+        <p class="q__route">
+          <span>analyst judgement — no document required</span>
+          <span class="affects">affects CR-0014</span>
+        </p>
+        <p class="q__body">
+          Sector or counterparty concentration is contested between the lenient and strict passes: the
+          lenient reading does not fire this criterion while the strict reading fires it. Both readings
+          are recorded, and <strong>the disagreement is not resolved by the engine.</strong>
+        </p>
+        <div class="q__affordance">
+          <a class="btn btn--primary" href="section.html#CR-0014">Compare the two readings</a>
+          <a class="btn" href="#">Leave contested</a>
+        </div>
+      </article>
+    </section>
+
+    <!-- ================= BAND 3: EXTERNALLY BLOCKED ================= -->
+    <section class="kind-band kind-band--blocked" id="blocked" aria-labelledby="blocked-h">
+      <div class="kind-band__head">
+        <div class="kind-band__title">
+          <span class="kind-band__count">18</span>
+          <h2 id="blocked-h">Blocked — the check could not be performed</h2>
+        </div>
+        <p class="kind-band__instruction">
+          <strong>Do not send these to the manager.</strong> The check could not be performed at all, so
+          no answer from the manager would resolve them. Each names the owner who can unblock it.
+        </p>
+      </div>
+
+      <div class="do-not-ask">
+        <p class="do-not-ask__lead">There is no answer field on any item in this band.</p>
+        <p>
+          That is deliberate. Inviting an analyst to type an answer to a geo-fenced register check is a
+          broken affordance — it would produce an unsourced assertion where a register lookup belongs.
+          These items route to an <strong>owner</strong>, not to a text box.
+        </p>
+        <p style="margin-bottom:0">
+          <strong>Absence of a check is not a finding.</strong> None of these is a finding of no adverse
+          history — each is the absence of a search.
+        </p>
+        <div class="owner-tally">
+          <span>Owners:</span>
+          <span>Infrastructure <b>10</b></span>
+          <span>Analyst (manual check) <b>5</b></span>
+          <span>Procurement <b>3</b></span>
+        </div>
+      </div>
+
+      <h3 class="stage-head">From diligence — 6</h3>
+
+      <article class="q q--blocked" id="sebi_registration_active">
+        <h4 class="q__key">sebi_registration_active</h4>
+        <p class="q__route">
+          <span>geo-fence / source-IP block</span>
+          <span class="owner">owner: Infrastructure</span>
+          <span class="affects">affects CR-0001</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0.5rem"><strong>This check could not be performed. Nothing you can
+            type or upload will resolve it.</strong></p>
+            <p style="margin-bottom:0">
+              [SEBI intermediary register] <code>www.sebi.gov.in</code> is unreachable from this network
+              egress. VERIFIED empirically: DNS resolves (202.191.143.30 / .158) and TCP connect to :443
+              succeeds, but the connection is dropped after the TLS Client Hello. A real Chrome browser
+              fails identically to curl, which places the block below the HTTP layer — a geo-fence or
+              source-IP WAF rather than an outage or bot detection. A headless browser does not help.
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Re-run this check from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Or ask the manager for the registration number and certificate <a class="btn" href="#" style="margin-left:.5rem">Add to Asks</a></span></li>
+        </ul>
+        <div class="q__affordance">
+          <a class="btn" href="#">Assign to…</a>
+          <a class="btn" href="#">Mark as handled outside the system</a>
+        </div>
+      </article>
+
+      <article class="q q--blocked" id="sebi_enforcement_actions">
+        <h4 class="q__key">sebi_enforcement_actions</h4>
+        <p class="q__route">
+          <span>geo-fence / source-IP block</span>
+          <span class="owner">owner: Infrastructure</span>
+          <span class="affects">affects CR-0002</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0.5rem"><strong>This check could not be performed. Nothing you can
+            type or upload will resolve it.</strong></p>
+            <p style="margin-bottom:0">
+              [SEBI enforcement / adjudication orders] — the same verified TLS-layer block as the
+              intermediary register. Document-side, all 52 pages were searched for 'enforcement',
+              'adjudication', 'show cause', 'debarment', 'penalty', 'proceeding' — no matter is
+              disclosed. <strong>This must NOT be read as a clean enforcement record, because no register
+              was ever reached.</strong>
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Re-run from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+        </ul>
+        <div class="q__affordance">
+          <a class="btn" href="#">Assign to…</a>
+          <a class="btn" href="#">Mark as handled outside the system</a>
+        </div>
+      </article>
+
+      <article class="q q--blocked" id="mca_master_data">
+        <h4 class="q__key">mca_master_data</h4>
+        <p class="q__route">
+          <span>authentication required</span>
+          <span class="owner">owner: Procurement</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0.5rem"><strong>This check could not be performed. Nothing you can
+            type or upload will resolve it.</strong></p>
+            <p style="margin-bottom:0">
+              [MCA21 V3 master data] requires an authenticated MCA account (VERIFIED:
+              <code>/master-data/MDS.html</code> redirects to <code>fologin.html</code>), and DIN status
+              enquiry is gated by a self-hosted canvas CAPTCHA that appears on submit. <strong>Both are
+              deliberate access controls on a government system; the engine does not attempt to
+              circumvent them.</strong>
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Route through a licensed data provider for authoritative MCA data</span></li>
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Assign to whoever holds the account <a class="btn" href="#" style="margin-left:.5rem">Assign to…</a></span></li>
+        </ul>
+      </article>
+
+      <article class="q q--blocked" id="ifsca_gift_city_registration">
+        <h4 class="q__key">ifsca_gift_city_registration</h4>
+        <p class="q__route">
+          <span>client-side rendering</span>
+          <span class="owner">owner: Analyst (manual check)</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0.5rem"><strong>This check could not be performed. Nothing you can
+            type or upload will resolve it.</strong></p>
+            <p style="margin-bottom:0">
+              [IFSCA directory] returned HTTP 200 with the table shell but <strong>ZERO populated data
+              rows</strong>. VERIFIED: the directory renders its rows client-side, so a plain HTTP fetch
+              always yields an empty table. This is <strong>INDISTINGUISHABLE from a legitimate 'no
+              match' and is therefore explicitly NOT reported as one.</strong>
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>A browser-driven fetch is required <a class="btn" href="#" style="margin-left:.5rem">Request browser-driven fetch</a></span></li>
+        </ul>
+      </article>
+
+      <article class="q q--blocked" id="registered_address_matches_hq">
+        <h4 class="q__key">registered_address_matches_hq</h4>
+        <p class="q__route">
+          <span>both sides unobtained</span>
+          <span class="owner">owner: Analyst (manual check)</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0.5rem"><strong>Partially unblockable.</strong></p>
+            <p style="margin-bottom:0">
+              [ZaubaCorp / document] Comparison requires both a stated HQ address from the document and a
+              filed registered address from a corporate register. <strong>Neither side was
+              obtained</strong> — the document itself states no address anywhere in 52 pages, including
+              the disclaimer pages. No adverse inference drawn.
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Supply the HQ address, then re-run <a class="btn" href="#" style="margin-left:.5rem">Supply HQ address</a></span></li>
+        </ul>
+      </article>
+
+      <article class="q q--blocked" id="key_persons_appear_in_filings">
+        <h4 class="q__key">key_persons_appear_in_filings</h4>
+        <p class="q__route">
+          <span>depends on MCA / ZaubaCorp</span>
+          <span class="owner">owner: Analyst (manual check)</span>
+          <span class="affects">affects CR-0012, CR-0035</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0.5rem"><strong>This check could not be performed. Nothing you can
+            type or upload will resolve it.</strong></p>
+            <p style="margin-bottom:0">
+              [ZaubaCorp directors] No filed director list was retrieved, so the ~20 individuals named
+              across pages 5, 33, 34, 35 and 44-50 could not be reconciled against any filing.
+              <strong>This is emphatically NOT a finding that those persons are absent from filings — no
+              comparison was performed.</strong>
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Depends on MCA / ZaubaCorp unblocking first</span></li>
+        </ul>
+      </article>
+
+      <h3 class="stage-head">From scoring — 12</h3>
+
+      <p style="font-size:var(--t-sm); color:var(--ink-2); max-width:70ch; margin-bottom:2rem">
+        The scoring stage re-records the same six blocked checks under their criterion-facing keys, plus
+        the two veto criteria that were forced to <code>unevaluated</code> as a result. Each carries its
+        own account of what the criterion did — and did not — conclude from the failure.
+      </p>
+
+      <article class="q q--blocked" id="q-CR-0001">
+        <h4 class="q__key">CR-0001</h4>
+        <p class="q__route">
+          <span>geo-fence / source-IP block</span>
+          <span class="owner">owner: Infrastructure</span>
+          <span class="affects">affects CR-0001</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0">
+              CR-0001 was reported as fired but depends on an external source that was unavailable;
+              <strong>forced to unevaluated. An unreachable source is never an adverse finding.</strong>
+              The verdict rests solely on the absence of a registration number in the 52 pages, and no
+              conclusion was drawn from the unreachable register in either direction.
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Re-run from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+        </ul>
+      </article>
+
+      <article class="q q--blocked" id="q-CR-0002">
+        <h4 class="q__key">CR-0002</h4>
+        <p class="q__route">
+          <span>geo-fence / source-IP block</span>
+          <span class="owner">owner: Infrastructure</span>
+          <span class="affects">affects CR-0002</span>
+        </p>
+        <div class="blocked-notice">
+          <span class="blocked-notice__glyph" aria-hidden="true">□</span>
+          <div>
+            <p style="margin-bottom:0">
+              Undisclosed regulatory action against sponsor or manager <strong>could not be evaluated:
+              the external check this criterion depends on could not be performed, so the criterion
+              cannot be evaluated either way.</strong> Recorded <code>fired: false</code> on the document
+              limb only.
+            </p>
+          </div>
+        </div>
+        <ul class="unblock-list">
+          <li><span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Re-run from an Indian IP <a class="btn" href="#" style="margin-left:.5rem">Request Indian-egress run</a></span></li>
+        </ul>
+      </article>
+
+      <details class="disclosure">
+        <summary>10 more from scoring</summary>
+        <div class="disclosure__body">
+          <p><code>sebi_registration_active</code>, <code>sebi_enforcement_actions</code>,
+          <code>team.key_persons_appear_in_filings</code>, <code>regulatory.sebi_registration_active</code>,
+          <code>regulatory.sebi_enforcement_actions</code>, <code>regulatory.mca_master_data</code>,
+          <code>regulatory.ifsca_gift_city_registration</code>,
+          <code>regulatory.key_persons_appear_in_filings</code>,
+          <code>regulatory.registered_address_matches_hq</code>, and a second <code>CR-0001</code>
+          occurrence.</p>
+          <p>Each restates the same infrastructure block from the scoring stage's point of view, recording
+          what the affected criterion did and did not conclude. All carry the same owner routing and the
+          same absence of an answer affordance.</p>
+          <p><em>Illustrative in this prototype:</em> summarised to keep the page readable. In the product
+          every one renders in full, exactly like the two above.</p>
+        </div>
+      </details>
+    </section>
+
+    <nav class="doc-nav" aria-label="Section navigation">
+      <a href="#">&larr; 10. Asks</a>
+      <a href="index.html">Index</a>
+      <a href="#">12. Sources &rarr;</a>
+    </nav>
+
+  </main>
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
