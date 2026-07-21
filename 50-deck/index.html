@@ -1,0 +1,1611 @@
+<meta charset="utf-8">
+<title>L1 Analysis Platform: an analyst co-pilot for fund research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&family=Outfit:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+/* ==========================================================================
+   L1 ANALYSIS PLATFORM: ALLOCATOR DECK
+   Extends the memo-reader visual system (screen-specs/prototype/styles.css)
+   so the deck reads as the same product, not marketing about it.
+
+   ACCENT DISCIPLINE: #c45a32 is reserved for structure and navigation only:
+   rules, eyebrows, the progress bar, the current-slide marker. It NEVER
+   encodes a finding's verdict. Verdicts use a separate validated status ramp
+   so brand colour never competes with meaning.
+   ========================================================================== */
+
+:root {
+  --accent:        #c45a32;
+  --accent-light:  #d97b4a;
+
+  /* Warm-biased neutrals: greys carry a trace of the accent's hue */
+  --paper:        #fcfcfb;
+  --paper-raised: #ffffff;
+  --paper-sunk:   #f5f4f1;
+  --rule:         #e4e2dd;
+  --rule-strong:  #cbc8c1;
+
+  --ink:          #1a1a1a;
+  --ink-2:        #4a4a4a;
+  --ink-3:        #7a7a7a;
+
+  /* Status ramp: distinct from accent in hue AND chroma */
+  --st-red:       #bf2d24;
+  --st-green:     #0e7a52;
+  --st-amber:     #946200;
+  /* Cool slate: the one hue nobody reads as a verdict. Load-bearing:
+     "unevaluated" must never look like a pass. */
+  --st-slate:     #4f5b69;
+
+  --tint-red:     #fbf0ef;
+  --tint-green:   #eef6f2;
+  --tint-amber:   #faf4e6;
+  --tint-slate:   #f0f2f5;
+  --tint-accent:  #fdf3ef;
+
+  --font-display: 'Bricolage Grotesque', 'Helvetica Neue', Arial, sans-serif;
+  --font-body:    'Outfit', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:    'Space Mono', 'Courier New', monospace;
+
+  --measure: 62ch;
+  --radius: 3px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:        #161614;
+    --paper-raised: #1e1e1b;
+    --paper-sunk:   #121210;
+    --rule:         #33322e;
+    --rule-strong:  #4a4843;
+    --ink:          #edebe6;
+    --ink-2:        #b6b2aa;
+    --ink-3:        #8b877f;
+    --accent:       #e08355;
+    --accent-light: #ec9f78;
+    --st-red:       #cc5040;
+    --st-green:     #33a877;
+    --st-amber:     #ad8620;
+    --st-slate:     #93a1b3;
+    --tint-red:     #2a1a17;
+    --tint-green:   #14251e;
+    --tint-amber:   #262013;
+    --tint-slate:   #1b1f24;
+    --tint-accent:  #2a1d16;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper:        #161614;
+  --paper-raised: #1e1e1b;
+  --paper-sunk:   #121210;
+  --rule:         #33322e;
+  --rule-strong:  #4a4843;
+  --ink:          #edebe6;
+  --ink-2:        #b6b2aa;
+  --ink-3:        #8b877f;
+  --accent:       #e08355;
+  --accent-light: #ec9f78;
+  --st-red:       #cc5040;
+  --st-green:     #33a877;
+  --st-amber:     #ad8620;
+  --st-slate:     #93a1b3;
+  --tint-red:     #2a1a17;
+  --tint-green:   #14251e;
+  --tint-amber:   #262013;
+  --tint-slate:   #1b1f24;
+  --tint-accent:  #2a1d16;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --paper:        #fcfcfb;
+  --paper-raised: #ffffff;
+  --paper-sunk:   #f5f4f1;
+  --rule:         #e4e2dd;
+  --rule-strong:  #cbc8c1;
+  --ink:          #1a1a1a;
+  --ink-2:        #4a4a4a;
+  --ink-3:        #7a7a7a;
+  --accent:       #c45a32;
+  --accent-light: #d97b4a;
+  --st-red:       #bf2d24;
+  --st-green:     #0e7a52;
+  --st-amber:     #946200;
+  --st-slate:     #4f5b69;
+  --tint-red:     #fbf0ef;
+  --tint-green:   #eef6f2;
+  --tint-amber:   #faf4e6;
+  --tint-slate:   #f0f2f5;
+  --tint-accent:  #fdf3ef;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--paper-sunk);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   STAGE. Fixed 16:9, scaled to fit. Guarantees no horizontal overflow at
+   1280px or on a 1024x768 projector.
+   ----------------------------------------------------------------------- */
+#stage {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#deck {
+  position: relative;
+  width: 1280px; height: 720px;
+  transform-origin: center center;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute; inset: 0;
+  padding: 62px 84px 74px;
+  display: none;
+  flex-direction: column;
+  background: var(--paper);
+}
+.slide.current { display: flex; }
+
+/* Slide furniture ------------------------------------------------------- */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 18px;
+  display: flex; align-items: center; gap: 12px;
+  white-space: nowrap;
+}
+.eyebrow::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0.45;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 62px;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+  margin: 0 0 20px;
+  text-wrap: balance;
+  max-width: 21ch;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 1.12;
+  letter-spacing: -0.017em;
+  margin: 0 0 10px;
+  text-wrap: balance;
+  max-width: 26ch;
+}
+
+.deck-p, p {
+  font-size: 19px; line-height: 1.55;
+  color: var(--ink-2);
+  max-width: var(--measure);
+  margin: 0 0 14px;
+  font-weight: 300;
+}
+.lead { font-size: 22px; color: var(--ink-2); }
+
+strong { font-weight: 600; color: var(--ink); }
+
+.mono { font-family: var(--font-mono); }
+
+/* Page-citation chip: the deck's structural device. In this product a
+   citation IS the content, so it is typeset as data, not as a footnote. */
+.cite {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.cite-b {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--st-slate);
+  background: var(--tint-slate);
+  border-radius: var(--radius);
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+/* Status ramp ----------------------------------------------------------- */
+.red   { color: var(--st-red); }
+.green { color: var(--st-green); }
+.amber { color: var(--st-amber); }
+.slate { color: var(--st-slate); }
+
+/* --------------------------------------------------------------------------
+   TITLE SLIDE
+   ----------------------------------------------------------------------- */
+.title-slide { justify-content: center; }
+.title-slide h1 { font-size: 76px; max-width: 17ch; margin-bottom: 26px; }
+.title-rule {
+  height: 3px; border: 0; width: 190px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light), transparent);
+  margin: 0 0 30px;
+}
+.title-meta {
+  display: flex; gap: 34px; flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: 12.5px;
+  color: var(--ink-3); margin-top: 40px;
+}
+.title-meta b { color: var(--ink-2); font-weight: 400; }
+
+.stamp {
+  display: inline-flex; align-items: center; gap: 9px;
+  border: 1px solid var(--st-amber);
+  color: var(--st-amber);
+  background: var(--tint-amber);
+  font-family: var(--font-mono);
+  font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 7px 13px; border-radius: var(--radius);
+  align-self: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   LAYOUT PRIMITIVES
+   ----------------------------------------------------------------------- */
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; flex: 1; min-height: 0; }
+.cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+.cols-wide { display: grid; grid-template-columns: 1.15fr 1fr; gap: 48px; flex: 1; min-height: 0; }
+.vstack { display: flex; flex-direction: column; gap: 14px; }
+.grow { flex: 1; min-height: 0; }
+
+/* Stat tiles ------------------------------------------------------------ */
+.stat {
+  border-top: 2px solid var(--rule-strong);
+  padding-top: 15px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.stat-fig {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 60px; line-height: 0.94;
+  letter-spacing: -0.028em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.stat-fig.sm { font-size: 42px; }
+.stat-lbl { font-size: 15.5px; line-height: 1.4; color: var(--ink-2); font-weight: 300; }
+.stat-src { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); }
+.stat.is-red   { border-top-color: var(--st-red); }
+.stat.is-green { border-top-color: var(--st-green); }
+.stat.is-slate { border-top-color: var(--st-slate); }
+.stat.is-accent{ border-top-color: var(--accent); }
+
+/* Finding rows ---------------------------------------------------------- */
+.finding {
+  display: grid;
+  grid-template-columns: 74px 1fr auto;
+  gap: 14px; align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.finding:last-child { border-bottom: 0; }
+.f-code {
+  font-family: var(--font-mono); font-size: 12px;
+  font-weight: 700; letter-spacing: -0.01em;
+}
+.f-text { font-size: 16px; line-height: 1.36; color: var(--ink); font-weight: 300; }
+.f-text em { color: var(--ink-2); font-style: normal; display: block; font-size: 13.5px; margin-top: 2px; line-height: 1.38; }
+
+/* Callout / quote ------------------------------------------------------- */
+.callout {
+  background: var(--paper-sunk);
+  border-left: 3px solid var(--accent);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.callout p { margin: 0; font-size: 18px; }
+
+blockquote.pull {
+  margin: 0; padding: 0 0 0 26px;
+  border-left: 3px solid var(--accent);
+  font-family: var(--font-display);
+  font-weight: 400; font-size: 27px; line-height: 1.32;
+  letter-spacing: -0.012em; color: var(--ink);
+  max-width: 30ch;
+}
+blockquote.pull cite {
+  display: block; margin-top: 14px;
+  font-family: var(--font-mono); font-size: 12px;
+  font-style: normal; color: var(--ink-3); letter-spacing: 0.02em;
+}
+
+/* Memo facsimile: actual output, rendered as the artifact it is --------- */
+.memo {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.035);
+}
+.memo-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 14px; padding-bottom: 12px; margin-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.memo-title { font-family: var(--font-display); font-weight: 600; font-size: 17px; letter-spacing: -0.008em; }
+.memo-verdict {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  color: var(--st-amber); background: var(--tint-amber);
+  padding: 4px 9px; border-radius: var(--radius);
+  letter-spacing: 0.04em; white-space: nowrap;
+}
+.memo-body { font-size: 14.5px; line-height: 1.5; color: var(--ink-2); font-weight: 300; }
+.memo-body p { font-size: 14.5px; margin: 0 0 9px; max-width: none; }
+.memo-h {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--ink-3); margin: 14px 0 7px;
+}
+.memo-body q { quotes: '"' '"'; color: var(--ink); }
+
+/* Scorecard table ------------------------------------------------------- */
+table.sc { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+table.sc td { padding: 7px 0; border-bottom: 1px solid var(--rule); color: var(--ink-2); font-weight: 300; }
+table.sc tr:last-child td { border-bottom: 0; }
+table.sc td.k { color: var(--ink-2); }
+table.sc td.v {
+  text-align: right; font-family: var(--font-mono); font-size: 13px;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+
+/* Routing bar (the co-pilot loop) --------------------------------------- */
+.route { display: flex; flex-direction: column; gap: 20px; }
+.route-row { display: grid; grid-template-columns: 58px 1fr; gap: 17px; align-items: start; }
+.route-n {
+  font-family: var(--font-display); font-weight: 700; font-size: 38px;
+  font-variant-numeric: tabular-nums; text-align: right; line-height: 0.9;
+}
+.route-bar { display: flex; flex-direction: column; gap: 8px; }
+.route-track { display: block; height: 10px; border-radius: 2px; background: var(--paper-sunk); overflow: hidden; }
+.route-fill { display: block; height: 100%; border-radius: 2px; }
+.route-lbl { font-size: 15px; line-height: 1.42; color: var(--ink-2); font-weight: 300; }
+.route-lbl b { color: var(--ink); font-weight: 500; }
+
+/* Pipeline / flow ------------------------------------------------------- */
+.flow { display: flex; align-items: stretch; gap: 0; margin: 4px 0 6px; }
+.flow-step {
+  flex: 1; padding: 13px 14px;
+  border: 1px solid var(--rule); border-right: 0;
+  background: var(--paper-raised);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.flow-step:last-child { border-right: 1px solid var(--rule); }
+.flow-step .s-n {
+  font-family: var(--font-mono); font-size: 10px; color: var(--accent);
+  letter-spacing: 0.1em;
+}
+.flow-step .s-t { font-size: 15px; color: var(--ink); font-weight: 500; }
+.flow-step .s-d { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); }
+
+/* Data-flow diagram (slide 3) -------------------------------------------
+   Hand-built. Accent stays structural: it draws the connective tissue
+   (arrows, the pipeline rule), never a magnitude. Stage duration is encoded
+   by an explicit bar + printed seconds, so length is never the only channel. */
+.df { display: grid; grid-template-columns: 200px 1fr 214px; gap: 22px; align-items: stretch; margin-top: 20px; }
+.df-col { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.df-cap {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 1px;
+}
+.df-item {
+  border: 1px solid var(--rule); background: var(--paper-raised);
+  border-radius: var(--radius); padding: 8px 11px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.df-item .i-t { font-size: 13.5px; color: var(--ink); font-weight: 500; line-height: 1.28; }
+.df-item .i-d { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-3); line-height: 1.35; }
+.df-item.is-doc { border-left: 3px solid var(--st-slate); }
+.df-item.is-out { border-left: 3px solid var(--st-green); }
+
+/* The engine block */
+.df-engine {
+  border: 1px solid var(--rule-strong); border-radius: var(--radius);
+  background: var(--paper-sunk); padding: 13px 15px 11px;
+  display: flex; flex-direction: column; min-width: 0;
+}
+.df-engine-h {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 9px;
+}
+.df-engine-h span:last-child { color: var(--ink-3); letter-spacing: 0.04em; }
+.df-stages { display: flex; flex-direction: column; gap: 9px; }
+.df-stage { display: grid; grid-template-columns: 15px 74px 1fr 96px; gap: 9px; align-items: center; }
+.df-sn { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-3); }
+.df-st { font-size: 13px; color: var(--ink); font-weight: 500; }
+.df-track { height: 7px; border-radius: 2px; background: var(--paper-raised); border: 1px solid var(--rule); overflow: hidden; }
+.df-fill { display: block; height: 100%; background: var(--st-slate); border-radius: 1px; }
+.df-num { font-family: var(--font-mono); font-size: 10px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.df-total {
+  display: flex; justify-content: space-between; gap: 10px;
+  margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: 10px; color: var(--ink-3);
+}
+.df-total b { color: var(--ink-2); font-weight: 400; }
+.df-arrow { font-family: var(--font-mono); font-size: 13px; color: var(--accent); text-align: center; line-height: 1; }
+
+/* Guarantee list -------------------------------------------------------- */
+.guarantees { display: flex; flex-direction: column; gap: 0; }
+.guarantee {
+  display: grid; grid-template-columns: auto 1fr; gap: 15px;
+  padding: 13px 0; border-bottom: 1px solid var(--rule);
+  align-items: start;
+}
+.guarantee:last-child { border-bottom: 0; }
+.g-mark {
+  font-family: var(--font-mono); font-size: 15px; line-height: 1.3;
+  color: var(--st-green); font-weight: 700;
+}
+.g-t { display: block; font-size: 17px; color: var(--ink); line-height: 1.4; font-weight: 400; }
+.g-d { display: block; font-size: 14.5px; color: var(--ink-2); line-height: 1.5; margin-top: 4px; font-weight: 300; }
+
+/* Criteria framework (slide 5) ------------------------------------------
+   Six dimensions, area-weighted by criteria count so governance visibly
+   dominates. Colour encodes TIER only, drawn from the existing status ramp
+   (veto=red, red flag=amber, green flag=green). The brand accent stays out
+   of it entirely: it never encodes a verdict. Every count is printed, so
+   the tile size and the stacked segments are never the only channel. */
+.fw { display: grid; grid-template-columns: repeat(6, 1fr);
+      gap: 8px; margin-top: 10px; }
+.fw-card {
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  background: var(--paper-raised); padding: 10px 12px 9px;
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+/* Area-weighting: governance (7) spans three columns, track record (3) two. */
+.fw-card.w7 { grid-column: span 3; }
+.fw-card.w3 { grid-column: span 2; }
+.fw-card.w2 { grid-column: span 2; }
+.fw-card.w1 { grid-column: span 2; }
+.fw-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.fw-name { font-size: 15px; color: var(--ink); font-weight: 500; line-height: 1.2; }
+.fw-n {
+  font-family: var(--font-display); font-weight: 700; font-size: 25px;
+  line-height: 0.9; font-variant-numeric: tabular-nums; color: var(--ink);
+}
+/* Stacked tier bar: 2px surface gap between segments, per mark spec. */
+.fw-bar { display: flex; gap: 2px; height: 7px; }
+.fw-seg { border-radius: 1px; }
+.fw-seg.veto  { background: var(--st-red); }
+.fw-seg.red   { background: var(--st-amber); }
+.fw-seg.green { background: var(--st-green); }
+.fw-eg { font-size: 12px; color: var(--ink-2); font-weight: 300; line-height: 1.38; }
+.fw-tier { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-3); letter-spacing: 0.04em; }
+
+.fw-key { display: flex; gap: 20px; align-items: center; margin-top: 11px; flex-wrap: wrap; flex: none; }
+.fw-k { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); font-weight: 300; }
+.fw-sw { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+
+/* Management-system slides ---------------------------------------------- */
+.roles { display: flex; flex-direction: column; gap: 0; }
+.role {
+  display: grid; grid-template-columns: 132px 1fr; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+}
+.role:last-child { border-bottom: 0; }
+.role-n { font-size: 15px; color: var(--ink); font-weight: 500; line-height: 1.3; }
+.role-d { font-size: 14px; color: var(--ink-2); font-weight: 300; line-height: 1.45; }
+
+/* Pipeline stage rail */
+.pipe { display: flex; align-items: stretch; gap: 0; margin: 6px 0 2px; }
+.pipe-s {
+  flex: 1; padding: 9px 8px; text-align: center;
+  border: 1px solid var(--rule); border-right: 0;
+  background: var(--paper-raised);
+  display: flex; flex-direction: column; gap: 3px; justify-content: center;
+}
+.pipe-s:last-child { border-right: 1px solid var(--rule); }
+.pipe-s.is-here { background: var(--tint-accent); border-color: var(--accent); }
+.pipe-s .p-t { font-size: 12.5px; color: var(--ink); font-weight: 500; line-height: 1.2; }
+.pipe-s .p-c { font-family: var(--font-mono); font-size: 9px; color: var(--ink-3); letter-spacing: 0.05em; }
+.pipe-s.is-here .p-c { color: var(--accent); }
+.pipe-term {
+  display: flex; gap: 10px; margin-top: 9px;
+}
+.pipe-term .t-x {
+  flex: 1; border: 1px dashed var(--rule-strong); border-radius: var(--radius);
+  padding: 8px 11px; background: var(--paper);
+}
+.pipe-term .t-t { font-size: 13px; color: var(--ink); font-weight: 500; }
+.pipe-term .t-d { font-size: 12.5px; color: var(--ink-2); font-weight: 300; line-height: 1.4; display: block; margin-top: 2px; }
+
+/* Email facsimile */
+.mail {
+  background: var(--paper-raised); border: 1px solid var(--rule);
+  border-radius: var(--radius); padding: 15px 18px;
+  display: flex; flex-direction: column; min-height: 0;
+}
+.mail-h {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding-bottom: 9px; margin-bottom: 10px; border-bottom: 1px solid var(--rule);
+}
+.mail-sub { font-family: var(--font-display); font-weight: 600; font-size: 14.5px; letter-spacing: -0.005em; }
+.mail-tag {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--st-amber); background: var(--tint-amber);
+  padding: 3px 7px; border-radius: var(--radius); white-space: nowrap;
+}
+.mail-b { font-size: 13px; line-height: 1.5; color: var(--ink-2); font-weight: 300; }
+.mail-b ol { margin: 7px 0 0; padding-left: 19px; }
+.mail-b li { margin-bottom: 5px; color: var(--ink); }
+.mail-ex {
+  margin-top: 11px; padding-top: 9px; border-top: 1px dashed var(--rule-strong);
+  font-size: 12.5px; color: var(--ink-3); line-height: 1.45; font-weight: 300;
+}
+.mail-ex b { color: var(--st-slate); font-weight: 500; }
+
+/* Limits ---------------------------------------------------------------- */
+.limits { max-width: 96ch; }
+.limit {
+  display: grid; grid-template-columns: 30px 1fr; gap: 16px;
+  padding: 15px 0; border-bottom: 1px solid var(--rule); align-items: start;
+}
+.limit:last-child { border-bottom: 0; }
+.l-mark {
+  font-family: var(--font-mono); font-size: 12px; color: var(--st-slate);
+  font-weight: 700; line-height: 1.6;
+}
+.l-t { font-size: 17px; color: var(--ink); font-weight: 400; line-height: 1.4; display: block; }
+.l-d {
+  font-size: 14.5px; color: var(--ink-2); margin-top: 5px;
+  line-height: 1.5; font-weight: 300; display: block; max-width: 88ch;
+}
+
+/* Footer / chrome ------------------------------------------------------- */
+.slide-foot {
+  position: absolute; left: 84px; right: 84px; bottom: 26px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3);
+  border-top: 1px solid var(--rule); padding-top: 11px;
+  letter-spacing: 0.04em;
+}
+.foot-brand { display: flex; align-items: center; gap: 9px; }
+.foot-brand svg { height: 13px; width: auto; color: var(--ink-3); }
+
+#progress {
+  position: absolute; left: 0; bottom: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+
+#nav {
+  position: fixed; right: 18px; bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule); border-radius: 100px;
+  padding: 6px 12px; z-index: 10;
+}
+#nav button {
+  background: none; border: 0; cursor: pointer; color: var(--ink-2);
+  font-family: var(--font-mono); font-size: 14px; line-height: 1;
+  padding: 3px 6px; border-radius: var(--radius);
+}
+#nav button:hover { background: var(--paper-sunk); color: var(--accent); }
+#nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#counter { font-variant-numeric: tabular-nums; letter-spacing: 0.05em; }
+
+@media (prefers-reduced-motion: reduce) {
+  #progress { transition: none; }
+}
+
+/* --------------------------------------------------------------------------
+   PRINT: one slide per landscape page
+   ----------------------------------------------------------------------- */
+@media print {
+  @page { size: 1280px 720px; margin: 0; }
+  html, body { overflow: visible; background: #fff; }
+  #stage { position: static; display: block; }
+  #deck { transform: none !important; width: 1280px; height: auto; }
+  .slide {
+    display: flex !important;
+    position: relative; inset: auto;
+    width: 1280px; height: 720px;
+    break-after: page; page-break-after: always;
+  }
+  #nav, #progress { display: none !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+
+<div id="stage">
+  <div id="deck">
+
+  <!-- ==================================================================
+       1. TITLE
+       =================================================================== -->
+  <section class="slide current title-slide">
+    <div class="stamp">Pre-MVP: engine working, management UI specified</div>
+    <h1 style="margin-top:30px;">The engine reads and evidences. The analyst judges.</h1>
+    <hr class="title-rule">
+    <p class="lead" style="max-width:52ch;">An analyst co-pilot for L1 fund research. Every finding cites the page it
+      came from, and everything it could not establish is stated rather than
+      omitted.</p>
+    <div class="title-meta">
+      <span><b>Validated on</b> a 52-page Category II AIF (infrastructure credit, ~₹5,000cr target)</span>
+      <span><b>Run</b> <span class="mono">022c6853</span></span>
+      <span><b>Engine</b> v0.1.0</span>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>01</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       2. THE PROBLEM (honestly sourced)
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">The problem you already have</p>
+    <h2 style="max-width:30ch;">Diligence capacity is the binding constraint, so allocators solve it by doing less</h2>
+    <div class="body">
+      <p style="max-width:78ch;">The pattern we built against, from allocator research.
+        <strong>Their sourcing follows separately.</strong> Shown as the hypothesis behind the product; the
+        evidence for it is our own run, from slide 6 on.</p>
+      <div class="cols-3" style="margin-top:14px;">
+        <div class="stat is-accent">
+          <span class="stat-fig">80%</span>
+          <span class="stat-lbl">of LPs say they cannot easily compare one manager's performance to another's</span>
+          <span class="stat-src">eVestment LP survey</span>
+        </div>
+        <div class="stat is-accent">
+          <span class="stat-fig">2 mo</span>
+          <span class="stat-lbl">average time to write an investment committee memo</span>
+          <span class="stat-src">Addepar / Stanford, 54 institutions</span>
+        </div>
+        <div class="stat is-accent">
+          <span class="stat-fig">38%</span>
+          <span class="stat-lbl">of managers accept a standard DDQ. The other ~62% stays bespoke</span>
+          <span class="stat-src">DiligenceVault, 780+ managers</span>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:26px;">
+        <p><strong>23% of LPs expect to cut GP relationships</strong>, citing diligence capacity. That is the
+        real cost: not slower diligence, but a smaller opportunity set. <span class="cite">Coller Capital Global Private Capital Barometer.</span></p>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>02</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       3. DATA FLOW: what goes in, what comes out
+       Per-stage timings and costs are the measured values from run.json
+       (run 022c6853). Bar length is proportional to wall-clock seconds and
+       the seconds are printed alongside, so length is never the only channel.
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">In and out</p>
+    <h2 style="max-width:34ch;">What goes in, what comes out</h2>
+    <div class="body">
+      <div class="df">
+        <div class="df-col">
+          <span class="df-cap">Input</span>
+          <div class="df-item is-doc">
+            <span class="i-t">The document</span>
+            <span class="i-d">52-page PDF · 5.6 MB<br>text layer extracted</span>
+          </div>
+          <div class="df-item is-doc">
+            <span class="i-t">Your criteria set</span>
+            <span class="i-d">17 rules · 2 veto<br>9 red · 6 green · frozen</span>
+          </div>
+          <div class="df-item is-doc">
+            <span class="i-t">Prior evidence</span>
+            <span class="i-d">documents + attested<br>facts, on a re-run</span>
+          </div>
+        </div>
+
+        <div class="df-col" style="justify-content:center;">
+          <div class="df-arrow" aria-hidden="true">→</div>
+          <div class="df-engine">
+            <div class="df-engine-h"><span>Engine v0.1.0</span><span>measured, run 022c6853</span></div>
+            <div class="df-stages">
+              <div class="df-stage">
+                <span class="df-sn">01</span><span class="df-st">Classify</span>
+                <span class="df-track"><span class="df-fill" style="width:4.6%;"></span></span>
+                <span class="df-num">30s · $0.60</span>
+              </div>
+              <div class="df-stage">
+                <span class="df-sn">02</span><span class="df-st">Extract</span>
+                <span class="df-track"><span class="df-fill" style="width:24.8%;"></span></span>
+                <span class="df-num">159s · $1.20</span>
+              </div>
+              <div class="df-stage">
+                <span class="df-sn">03</span><span class="df-st">Verify</span>
+                <span class="df-track"><span class="df-fill" style="width:1%;"></span></span>
+                <span class="df-num">2s · $0.00</span>
+              </div>
+              <div class="df-stage">
+                <span class="df-sn">04</span><span class="df-st">Score</span>
+                <span class="df-track"><span class="df-fill" style="width:100%;"></span></span>
+                <span class="df-num">643s · $2.98</span>
+              </div>
+              <div class="df-stage">
+                <span class="df-sn">05</span><span class="df-st">Memo</span>
+                <span class="df-track"><span class="df-fill" style="width:31.2%;"></span></span>
+                <span class="df-num">201s · $0.92</span>
+              </div>
+            </div>
+            <div class="df-total">
+              <span><b>17 min</b> wall-clock</span>
+              <span><b>$5.70</b> total</span>
+              <span><b>121/124</b> quotes verified</span>
+            </div>
+          </div>
+          <div class="df-arrow" aria-hidden="true">→</div>
+        </div>
+
+        <div class="df-col">
+          <span class="df-cap">Output</span>
+          <div class="df-item is-out">
+            <span class="i-t">A 12-section IC memo</span>
+            <span class="i-d">markdown + branded PDF<br>§11 non-excludable</span>
+          </div>
+          <div class="df-item is-out">
+            <span class="i-t">Scored findings</span>
+            <span class="i-d">every one carrying the<br>page it came from</span>
+          </div>
+          <div class="df-item is-out">
+            <span class="i-t">57 routed questions</span>
+            <span class="i-d">33 document · 5 analyst<br>19 externally blocked</span>
+          </div>
+          <div class="df-item is-out">
+            <span class="i-t">Machine-readable JSON</span>
+            <span class="i-d">every stage artifact,<br>re-readable and diffable</span>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:16px;max-width:92ch;font-size:17px;">Scoring is two-thirds of both the clock and the
+        cost, because it is the stage that runs twice: <strong>a lenient pass and a strict pass</strong>. The
+        diligence stage costs nothing, because it calls registers, not a model.</p>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>03</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       4. WHAT IT IS
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">What it is</p>
+    <h2>A pitch deck goes in. An evidenced IC memo comes out.</h2>
+    <div class="body">
+      <p style="max-width:80ch;">Five stages, each receiving every prior stage's output. The recommendation is
+        computed deterministically from the scorecard. <strong>No model writes the verdict.</strong></p>
+      <div class="flow" style="margin-top:20px;">
+        <div class="flow-step"><span class="s-n">01</span><span class="s-t">Classify</span><span class="s-d">7/7 quotes verified</span></div>
+        <div class="flow-step"><span class="s-n">02</span><span class="s-t">Extract</span><span class="s-d">45/45 verified</span></div>
+        <div class="flow-step"><span class="s-n">03</span><span class="s-t">Diligence</span><span class="s-d">registers · $0.00</span></div>
+        <div class="flow-step"><span class="s-n">04</span><span class="s-t">Score</span><span class="s-d">17 criteria · 2 passes</span></div>
+        <div class="flow-step"><span class="s-n">05</span><span class="s-t">Memo</span><span class="s-d">12 sections + index</span></div>
+      </div>
+      <div class="cols" style="margin-top:26px;">
+        <div class="vstack">
+          <p style="margin:0;"><strong>Scoring runs twice</strong>: a lenient pass and a strict pass. Where they
+            disagree, the engine does not resolve it. It reports the finding as <span class="slate">contested</span>
+            and prints both readings for the committee to adjudicate.</p>
+        </div>
+        <div class="vstack">
+          <p style="margin:0;"><strong>The output stands alone.</strong> No server, no login, no database. An
+            analyst runs it on a laptop and opens the memo. A confidential PPM need never leave the building.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>04</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       5. WHAT THE ANALYSIS EXAMINES (the framework, before it is applied)
+       Every count verified against engine/criteria/default/criteria.yaml:
+       17 criteria, tiers 2 VETO / 9 RED_FLAG / 6 GREEN_FLAG; categories
+       governance 7, track_record 3, regulatory 2, disclosure 2, fees 2,
+       concentration 1. Tile width is area-weighted by count.
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">What the analysis examines</p>
+    <h2 style="max-width:36ch;">Six dimensions, seventeen criteria, three tiers</h2>
+    <div class="body">
+      <div class="fw">
+        <div class="fw-card w7">
+          <div class="fw-top">
+            <span class="fw-name">Governance</span>
+            <span class="fw-n">7</span>
+          </div>
+          <div class="fw-bar" role="img" aria-label="3 red flags, 4 green flags">
+            <span class="fw-seg red" style="flex:3;"></span>
+            <span class="fw-seg green" style="flex:4;"></span>
+          </div>
+          <span class="fw-tier">3 red · 4 green</span>
+          <span class="fw-eg">Key-person risk and succession · valuation policy · service-provider
+            quality · GP commitment · independent investment committee · institutional anchor investors</span>
+        </div>
+        <div class="fw-card w3">
+          <div class="fw-top">
+            <span class="fw-name">Track record</span>
+            <span class="fw-n">3</span>
+          </div>
+          <div class="fw-bar" role="img" aria-label="2 red flags, 1 green flag">
+            <span class="fw-seg red" style="flex:2;"></span>
+            <span class="fw-seg green" style="flex:1;"></span>
+          </div>
+          <span class="fw-tier">2 red · 1 green</span>
+          <span class="fw-eg">Realised versus unrealised performance · attributable prior history</span>
+        </div>
+        <div class="fw-card w2">
+          <div class="fw-top">
+            <span class="fw-name">Regulatory standing</span>
+            <span class="fw-n red">2</span>
+          </div>
+          <div class="fw-bar" role="img" aria-label="2 vetoes">
+            <span class="fw-seg veto" style="flex:2;"></span>
+          </div>
+          <span class="fw-tier red">both veto</span>
+          <span class="fw-eg">Verifiable registration · undisclosed enforcement action against sponsor
+            or manager</span>
+        </div>
+        <div class="fw-card w2">
+          <div class="fw-top">
+            <span class="fw-name">Disclosure quality</span>
+            <span class="fw-n">2</span>
+          </div>
+          <div class="fw-bar" role="img" aria-label="2 red flags">
+            <span class="fw-seg red" style="flex:2;"></span>
+          </div>
+          <span class="fw-tier">2 red</span>
+          <span class="fw-eg">Gross versus net returns · document currency</span>
+        </div>
+        <div class="fw-card w2">
+          <div class="fw-top">
+            <span class="fw-name">Fees and terms</span>
+            <span class="fw-n">2</span>
+          </div>
+          <div class="fw-bar" role="img" aria-label="1 red flag, 1 green flag">
+            <span class="fw-seg red" style="flex:1;"></span>
+            <span class="fw-seg green" style="flex:1;"></span>
+          </div>
+          <span class="fw-tier">1 red · 1 green</span>
+          <span class="fw-eg">Structure against market norms · waterfall transparency</span>
+        </div>
+        <div class="fw-card w1">
+          <div class="fw-top">
+            <span class="fw-name">Concentration</span>
+            <span class="fw-n">1</span>
+          </div>
+          <div class="fw-bar" role="img" aria-label="1 red flag">
+            <span class="fw-seg red" style="flex:1;"></span>
+          </div>
+          <span class="fw-tier">1 red</span>
+          <span class="fw-eg">Sector and counterparty exposure against stated limits</span>
+        </div>
+      </div>
+      <div class="fw-key">
+        <span class="fw-k"><span class="fw-sw" style="background:var(--st-red);"></span>Veto (2)</span>
+        <span class="fw-k"><span class="fw-sw" style="background:var(--st-amber);"></span>Red flag (9)</span>
+        <span class="fw-k"><span class="fw-sw" style="background:var(--st-green);"></span>Green flag (6)</span>
+      </div>
+      <div class="cols" style="margin-top:14px;flex:none;">
+        <p style="margin:0;font-size:15.5px;"><strong>Governance is the largest category by design.</strong>
+          Seven of seventeen. Operational risk predicts fund failure more strongly than financial risk, so the
+          framework is weighted towards how allocators actually lose money.</p>
+        <p style="margin:0;font-size:15.5px;"><strong>Only the regulatory criteria are vetoes.</strong> Those are
+          legal preconditions: a fund without valid registration cannot accept commitments at all. Everything
+          else is weighted judgement, never a hard stop.</p>
+      </div>
+      <p style="margin:9px 0 0;font-size:14.5px;color:var(--ink-2);max-width:none;">These are <strong>our defaults,
+        and they are placeholders</strong>. You replace them, and promote any of them to a veto in your own set.
+        That is not a caveat; it is the product.</p>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>05</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       6. WHAT IT FOUND (the evidence slide)
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">What it found: a 52-page Category II AIF</p>
+    <h2>Findings a human would need all 52 pages to notice</h2>
+    <div class="body">
+      <div class="cols-wide" style="margin-top:6px;">
+        <div>
+          <div class="finding">
+            <span class="f-code red">CR-0010</span>
+            <span class="f-text">Returns stated <strong>gross throughout</strong>, with no net-to-investor figure anywhere
+              <em>All 52 pages searched for "net IRR", "post-fee", "net of fees". None exists.</em></span>
+            <span class="cite">p.20, p.52</span>
+          </div>
+          <div class="finding">
+            <span class="f-code red">CR-0011</span>
+            <span class="f-text">The predecessor's ~21% is a <strong>tracking</strong> number, marked rather than realised
+              <em>No DPI, no realised multiple, no completed exit stated anywhere.</em></span>
+            <span class="cite">p.13, p.17</span>
+          </div>
+          <div class="finding">
+            <span class="f-code red">CR-0016</span>
+            <span class="f-text">No valuation policy for illiquid assets
+              <em>Zero hits for "valuer", "fair value", "NAV", "valuation policy".</em></span>
+            <span class="cite">p.25, p.41</span>
+          </div>
+          <div class="finding">
+            <span class="f-code red">CR-0014</span>
+            <span class="f-text">Concentration floors, but no cap that bounds them
+              <em>"At least 80%" into roads and solar; no single-issuer limit.</em></span>
+            <span class="cite">p.20, p.23</span>
+          </div>
+          <div class="finding">
+            <span class="f-code slate">CR-0012</span>
+            <span class="f-text">No key-person clause in a 7-year fund. <strong>Contested.</strong>
+              <em>Fired on the strict pass, not the lenient one. Both readings printed; the engine does not resolve it.</em></span>
+            <span class="cite">p.27, p.34</span>
+          </div>
+          <div class="finding">
+            <span class="f-code green">CR-0033</span>
+            <span class="f-text">Tier-one service providers correctly credited
+              <em>Big Four auditor, tier-one legal counsel, bank custodian, established RTA. All five named.</em></span>
+            <span class="cite">p.37</span>
+          </div>
+        </div>
+        <div class="vstack">
+          <div class="callout">
+            <p><strong>No GP commitment disclosed</strong> anywhere in 52 pages, reported as an explicit absence,
+              with the search terms listed. <em style="font-style:normal;color:var(--ink-2)">A fund that does not
+              disclose its sponsor commitment has told you something.</em></p>
+          </div>
+          <table class="sc" style="margin-top:6px;">
+            <tr><td class="k">Red flags fired</td><td class="v red">5</td></tr>
+            <tr><td class="k">Green flags fired</td><td class="v green">1</td></tr>
+            <tr><td class="k">Red vs green weight</td><td class="v">14.0 vs 1.0</td></tr>
+            <tr><td class="k">Contested between passes</td><td class="v slate">2</td></tr>
+            <tr><td class="k">Veto fired</td><td class="v">none</td></tr>
+            <tr><td class="k">Veto unevaluated</td><td class="v slate">2</td></tr>
+            <tr><td class="k">Open questions</td><td class="v">57</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>06</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       7. ACTUAL MEMO OUTPUT
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">Actual output: memo §1 and §4, verbatim</p>
+    <h2>This is what it writes</h2>
+    <div class="body">
+      <div class="cols" style="margin-top:8px;">
+        <div class="memo">
+          <div class="memo-head">
+            <span class="memo-title">1. Recommendation</span>
+            <span class="memo-verdict">HOLD</span>
+          </div>
+          <div class="memo-body">
+            <p>red-flag weight 14.0 materially exceeds green-flag weight 1.0; the open questions should be
+              answered before proceeding. NOTE: 2 veto criterion/criteria could not be evaluated, so this
+              recommendation is made without them.</p>
+            <p style="color:var(--ink);">This is a decision gate, not investment advice: it recommends what to
+              do next, not whether to invest.</p>
+            <div class="memo-h">Veto criteria that could not be evaluated</div>
+            <p>CR-0001, CR-0002. The check these depend on could not be performed, so they are reported as
+              unevaluated — neither fired nor clean. <strong>No veto fired, but no veto was cleared either.</strong></p>
+          </div>
+        </div>
+        <div class="memo">
+          <div class="memo-head">
+            <span class="memo-title">4. Risk Factors · CR-0011</span>
+            <span class="memo-verdict" style="color:var(--st-red);background:var(--tint-red);">RED / HIGH</span>
+          </div>
+          <div class="memo-body">
+            <p>The predecessor fund is squarely within its holding period, and its performance is
+              described in unrealised, forward-looking language throughout. Page 13 uses <q>Tracking gross IRR</q>
+              and page 17 repeats <q>Robust, operating, cash generating infra projects tracking gross IRR of ~21%</q>.</p>
+            <div class="memo-h">What the engine worked out</div>
+            <p>Three of the largest deals — Rs 520cr, Rs 1,502cr and Rs 200cr, together <strong>Rs 2,222cr of the
+              Rs 2,985cr portfolio</strong> — are still awaiting central government counterparty approvals to close.
+              Page 13 states outright that cashflows accrue <q>from deals that are yet to close</q>.</p>
+          </div>
+        </div>
+      </div>
+      <p class="cite" style="margin-top:16px;font-size:12px;">Unedited from <span class="mono">05-memo/01-recommendation.md</span> and <span class="mono">05-memo/04-risk-factors.md</span> · run <span class="mono">022c6853</span> · 2026-07-21</p>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>07</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       8. WHY IT IS TRUSTWORTHY
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">Why it is trustworthy</p>
+    <h2>The differentiator is not the automation. It is what the engine refuses to do.</h2>
+    <div class="body">
+      <div class="cols-wide" style="margin-top:8px;">
+        <div class="guarantees">
+          <div class="guarantee">
+            <span class="g-mark">✓</span>
+            <span><span class="g-t">Every quote is checked against the page it cites</span>
+              <span class="g-d">Not trusted from the model, verified in code. 102 of 105 citations matched (97.1%).</span></span>
+          </div>
+          <div class="guarantee">
+            <span class="g-mark">✓</span>
+            <span><span class="g-t">Numbers must trace to an extracted value, or the run fails</span>
+              <span class="g-d">Numeric traceability is a hard invariant, not a quality score.</span></span>
+          </div>
+          <div class="guarantee">
+            <span class="g-mark">✓</span>
+            <span><span class="g-t">The memo cannot contradict its own scorecard</span>
+              <span class="g-d">Enforced at the stage boundary. A memo whose verdict disagrees with its scorecard does not ship.</span></span>
+          </div>
+          <div class="guarantee">
+            <span class="g-mark">✓</span>
+            <span><span class="g-t">It reports what it could not determine</span>
+              <span class="g-d">Section 11 is non-excludable from any export, including from the PDF an IC reads.</span></span>
+          </div>
+          <div class="guarantee">
+            <span class="g-mark">✓</span>
+            <span><span class="g-t">An unreachable source is never an adverse finding</span>
+              <span class="g-d">Unverifiable claims never move the score, in either direction.</span></span>
+          </div>
+        </div>
+        <div class="vstack" style="justify-content:center;">
+          <blockquote class="pull">Vendors in this category publish hours-saved and never accuracy. That is the
+            gap this engine is measured against.
+            <cite>PRD 06 §1 · design posture</cite></blockquote>
+          <div class="callout" style="margin-top:16px;">
+            <p style="font-size:16px;">Benchmark context: FinanceBench found GPT-4-Turbo with retrieval
+              incorrectly answered or refused <strong>81%</strong> of questions over public filings. Grounding
+              is not a nice-to-have in this domain.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>08</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       9. THE CO-PILOT LOOP
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">The co-pilot loop</p>
+    <h2>57 open questions are not a failure. They are the worklist.</h2>
+    <div class="body">
+      <div class="cols-wide" style="margin-top:10px;">
+        <div class="route">
+          <div class="route-row">
+            <span class="route-n" style="color:var(--st-green);">33</span>
+            <span class="route-bar">
+              <span class="route-track"><span class="route-fill" style="width:58%;background:var(--st-green);"></span></span>
+              <span class="route-lbl"><b>Answerable from a document we do not have.</b> Request the PPM; many close in one action</span>
+            </span>
+          </div>
+          <div class="route-row">
+            <span class="route-n" style="color:var(--st-amber);">5</span>
+            <span class="route-bar">
+              <span class="route-track"><span class="route-fill" style="width:8.8%;background:var(--st-amber);"></span></span>
+              <span class="route-lbl"><b>Answerable by an analyst.</b> Attest with a required source, recorded as attested, never as document-grounded</span>
+            </span>
+          </div>
+          <div class="route-row">
+            <span class="route-n" style="color:var(--st-slate);">19</span>
+            <span class="route-bar">
+              <span class="route-track"><span class="route-fill" style="width:33.3%;background:var(--st-slate);"></span></span>
+              <span class="route-lbl"><b>Externally blocked: the check could not be performed.</b> Do not ask the manager. Routed to an owner instead</span>
+            </span>
+          </div>
+          <p style="margin-top:18px;font-size:17px;">Each entry states <strong>what was searched for and where</strong>.
+            That is what makes it a worklist and not a disclaimer. It records what has already been ruled out,
+            so the same search is not repeated by hand.</p>
+        </div>
+        <div class="vstack">
+          <div class="callout">
+            <p style="font-size:16.5px;"><strong>Upload a PPM → re-run → a new version.</strong> Prior versions stay
+              frozen and downloadable. The diff is causal:</p>
+            <p style="font-size:15.5px;margin-top:10px;color:var(--ink);font-family:var(--font-mono);line-height:1.45;">
+              "CR-0030 flipped because the PPM you uploaded disclosed a 2.5% GP commitment on p.14."</p>
+          </div>
+          <p style="font-size:16px;margin-top:4px;">Ticking a box never closes a question. <strong>Only a re-run
+            establishes what a document actually says</strong>. Otherwise an analyst could close 57 questions in
+            57 clicks without the engine reading a page.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>09</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       10. CUSTOMISATION
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">Why it becomes yours</p>
+    <h2>The rules are authored by you, not by us</h2>
+    <div class="body">
+      <div class="cols" style="margin-top:10px;">
+        <div class="vstack">
+          <p style="margin:0;">Red flags, green flags and vetoes encode <strong>your</strong> house view. Our 17 seed
+            criteria are explicitly placeholders. The seed deliberately does not even activate itself, so an admin
+            must look at the rules before any deal is scored against them.</p>
+          <div class="guarantees" style="margin-top:8px;">
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">→</span>
+              <span><span class="g-t">Criteria sets are versioned and frozen</span>
+                <span class="g-d">Activating a set freezes it. Editing an active set clones a new draft.</span></span>
+            </div>
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">→</span>
+              <span><span class="g-t">Every memo records which rules scored it</span>
+                <span class="g-d">A memo read six months later is interpretable under the rules that produced it.</span></span>
+            </div>
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">→</span>
+              <span><span class="g-t">Change a rule, re-run, watch the score move</span>
+                <span class="g-d">Tier is a policy choice: we moved "no track record" from veto to red flag so first-time managers are surfaced, not silently rejected.</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="vstack">
+          <div class="memo">
+            <div class="memo-head">
+              <span class="memo-title">Seed set CS-2026-0001</span>
+              <span class="memo-verdict" style="color:var(--st-slate);background:var(--tint-slate);">DRAFT</span>
+            </div>
+            <div class="memo-body">
+              <table class="sc">
+                <tr><td class="k">Veto tier</td><td class="v">2</td></tr>
+                <tr><td class="k">Red flag tier</td><td class="v">9</td></tr>
+                <tr><td class="k">Green flag tier</td><td class="v">6</td></tr>
+              </table>
+              <div class="memo-h">From the seed set itself</div>
+              <p><q>These are placeholders authored to make the system demonstrable, not house policy. Every
+                deploying institution is expected to review, edit, and replace them.</q></p>
+            </div>
+          </div>
+          <p style="font-size:15.5px;margin:0;">Thresholds we consider genuinely arbitrary carry a
+            <span class="mono cite-b">[NEEDS REVIEW]</span> marker so they cannot quietly reach production.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>10</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       11. THE MANAGEMENT SYSTEM: roles and pipeline
+       Source: PRD 01 §  roles table, PRD 04 §1.1 stages, §1.2 ODD asymmetry,
+       §1.4 passed deals. Specification, not built.
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">The system around the engine: specified, not built</p>
+    <h2 style="max-width:32ch;">Who can do what, and where a deal sits</h2>
+    <div class="body">
+      <div class="cols-wide" style="margin-top:4px;">
+        <div class="vstack">
+          <div class="roles">
+            <div class="role">
+              <span class="role-n">Analyst</span>
+              <span class="role-d">Uploads, runs, triages, answers open questions, re-runs. The daily operator.</span>
+            </div>
+            <div class="role">
+              <span class="role-n">Super Admin</span>
+              <span class="role-d">Head of Research or CIO. Authors and versions the criteria that encode house policy.</span>
+            </div>
+            <div class="role">
+              <span class="role-n">IC Member</span>
+              <span class="role-d">Reads finished memos with full attribution to the rules that produced them. Does not upload or promote.</span>
+            </div>
+            <div class="role">
+              <span class="role-n slate">ODD Reviewer</span>
+              <span class="role-d">Risk &amp; GRC. <strong>Reports to the COO, not the CIO.</strong> Sees no pipeline board and no stage columns at all.</span>
+            </div>
+          </div>
+          <div class="callout" style="margin-top:14px;">
+            <p style="font-size:16px;"><strong>ODD holds an asymmetric veto.</strong> A failing review blocks
+              advancement into commitment. A passing review advances nothing. There is no event by which ODD moves
+              a deal forward, <em style="font-style:normal;color:var(--ink-2)">because in reality there is no such
+              power.</em></p>
+            <p style="font-size:15px;margin-top:9px;color:var(--ink);">The power never to hire, never the power to
+              hire. Enforced at the permission layer, not by UI convention.</p>
+          </div>
+        </div>
+        <div class="vstack">
+          <p style="margin:0 0 2px;font-size:16px;">Canonical allocator stages, not invented labels. The platform's
+            centre of gravity is <strong>initial screening</strong>. It tracks the later stages so the funnel is
+            complete, and does not pretend to run an IC.</p>
+          <div class="pipe">
+            <div class="pipe-s"><span class="p-t">Sourcing</span><span class="p-c">01</span></div>
+            <div class="pipe-s is-here"><span class="p-t">Screening</span><span class="p-c">L1 HERE</span></div>
+            <div class="pipe-s"><span class="p-t">IDD</span><span class="p-c">03</span></div>
+            <div class="pipe-s"><span class="p-t">IC</span><span class="p-c">04</span></div>
+            <div class="pipe-s"><span class="p-t">Commit</span><span class="p-c">05</span></div>
+            <div class="pipe-s"><span class="p-t">Monitor</span><span class="p-c">06</span></div>
+          </div>
+          <div class="pipe-term">
+            <div class="t-x">
+              <span class="t-t slate">ODD: a parallel track</span>
+              <span class="t-d">Its own entity, lifecycle and rating scale. Not a stage a deal passes through.</span>
+            </div>
+          </div>
+          <div class="pipe-term" style="margin-top:2px;">
+            <div class="t-x">
+              <span class="t-t">Passed: a first-class outcome</span>
+              <span class="t-d">A decline keeps its deal and memo permanently readable, with a structured reason.
+                Most allocators lose this record entirely, and with it the answer to <em style="font-style:normal">how
+                good are we at saying no?</em></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>11</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       12. DOCUMENTS, RE-RUN LOOP, AUDIT
+       Source: PRD 01 §  content addressing, PRD 07 §2.1, PRD 08 §4.
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">The system around the engine: specified, not built</p>
+    <h2 style="max-width:34ch;">Documents accumulate. Versions freeze. The diff explains itself.</h2>
+    <div class="body">
+      <div class="cols" style="margin-top:6px;">
+        <div class="vstack">
+          <div class="guarantees">
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">→</span>
+              <span><span class="g-t">Every document is addressed by its content hash</span>
+                <span class="g-d">The storage key is <span class="mono cite-b">sha256(bytes)</span>; the filename is
+                  metadata, never an identifier. Two analysts forwarding the same deck produce one stored blob and
+                  one deduplication event.</span></span>
+            </div>
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">→</span>
+              <span><span class="g-t">A deal accumulates documents across vintages</span>
+                <span class="g-d">Fund II's deck sits alongside Fund I's, in date order, so you can see how a
+                  manager's story changed rather than only what it says today.</span></span>
+            </div>
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">→</span>
+              <span><span class="g-t">Event-sourced throughout</span>
+                <span class="g-d">Every state change is an auditable event with an actor and a timestamp: who
+                  uploaded what, which criteria version scored it, who exported which memo.</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="vstack">
+          <p style="margin:0;font-size:16.5px;">An open question closes one of two ways: <strong>upload a document</strong>,
+            or <strong>attest a fact with a required source</strong>. An attested fact is labelled as attested and
+            never rendered as a page citation. Externally-blocked questions accept neither.</p>
+          <div class="memo" style="margin-top:2px;">
+            <div class="memo-head">
+              <span class="memo-title">v1 → v2 causal diff</span>
+              <span class="memo-verdict" style="color:var(--st-slate);background:var(--tint-slate);">ILLUSTRATIVE</span>
+            </div>
+            <div class="memo-body">
+              <p><strong>CR-0030 (Meaningful GP commitment) flipped from not-fired to fired</strong> because the PPM
+                (EV-2026-000073, uploaded 24 Jul, p.14) disclosed a 2.5% GP commitment in cash. In v1 this criterion
+                could not fire — extraction searched all 52 pages for <q>sponsor commitment</q>, <q>GP commitment</q>,
+                <q>co-investment</q> and found nothing.</p>
+            </div>
+          </div>
+          <p style="margin:0;font-size:15px;">The diff is <strong>causal, not textual</strong>. Two memos from a
+            non-deterministic model differ on nearly every line; a prose diff would make the tool look like it changed
+            its mind arbitrarily. Prior versions stay frozen and downloadable.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>12</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       13. THE INFORMATION REQUEST (specified, not built)
+       Source: memo §10 asks (real remediation_prompt text from
+       engine/criteria/default/criteria.yaml) + PRD 07 §2.3 routing.
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">New: specified, not yet built</p>
+    <h2 style="max-width:34ch;">The information request writes itself</h2>
+    <div class="body">
+      <div class="cols-wide" style="margin-top:4px;">
+        <div class="vstack">
+          <p style="margin:0;">The memo already states, per unresolved item, <strong>what is missing and what was
+            searched for</strong>, and every criterion carries a <span class="mono cite-b">remediation_prompt</span>.
+            So the platform can assemble a ready-to-send request to the manager. An analyst reviews it and sends it.</p>
+          <div class="guarantees" style="margin-top:4px;">
+            <div class="guarantee">
+              <span class="g-mark">✓</span>
+              <span><span class="g-t">It is specific, not a blanket request</span>
+                <span class="g-d">Not "please send more information". The exact figure, clause or policy, named.</span></span>
+            </div>
+            <div class="guarantee">
+              <span class="g-mark">✓</span>
+              <span><span class="g-t">It excludes the externally-blocked items</span>
+                <span class="g-d">No manager can answer a question about a register the platform could not reach.
+                  The routing already exists in the data, so the email is correct by construction rather than by the
+                  analyst remembering.</span></span>
+            </div>
+          </div>
+          <p style="margin:0;font-size:15.5px;">On the reference run that is <strong>38 items to the manager</strong>
+            (the 33 document-answerable plus 5 analyst-answerable) and <strong>19 routed to an internal owner</strong>
+            instead.</p>
+        </div>
+        <div class="mail">
+          <div class="mail-h">
+            <span class="mail-sub">Information request · initial screening</span>
+            <span class="mail-tag">Draft · analyst review</span>
+          </div>
+          <div class="mail-b">
+            Drawn from the remediation text of every criterion that fired:
+            <ol>
+              <li>Net-to-investor IRR for the predecessor fund, and target net IRR after all fees, expenses and carry.</li>
+              <li>The key-person clause verbatim: designated persons, trigger event, and consequence.</li>
+              <li>The written valuation policy for unlisted assets, and the identity and independence of the valuer.</li>
+              <li>GP commitment as a percentage of fund size.</li>
+              <li>Formal concentration limits: single investment, single sector, single counterparty caps.</li>
+            </ol>
+            <div class="mail-ex">
+              <b>Excluded automatically.</b> 19 questions whose checks could not be performed externally. They are
+              routed to Infrastructure (11), Procurement (5) and an analyst manual check (3), and never sent to the
+              manager.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>13</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       14. SCALABILITY / ECONOMICS
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">Economics and scale</p>
+    <h2>Measured, not estimated</h2>
+    <div class="body">
+      <div class="cols-3" style="margin-top:14px;">
+        <div class="stat">
+          <span class="stat-fig">$2–4</span>
+          <span class="stat-lbl">marginal cost per full analysis of a 52-page deck</span>
+          <span class="stat-src">observed across runs</span>
+        </div>
+        <div class="stat">
+          <span class="stat-fig">8–16</span>
+          <span class="stat-lbl">minutes wall-clock, end to end</span>
+          <span class="stat-src">6× variance; budget the worst case</span>
+        </div>
+        <div class="stat">
+          <span class="stat-fig">52</span>
+          <span class="stat-lbl">pages read, every page text-extracted and retained</span>
+          <span class="stat-src">reference deck</span>
+        </div>
+      </div>
+      <div class="cols" style="margin-top:32px;">
+        <div class="vstack">
+          <p style="margin:0;"><strong>Stateless per run.</strong> The engine holds no database and no shared state,
+            so deals parallelise across workers without coordination.</p>
+          <p style="margin:0;"><strong>Event-sourced management layer.</strong> Every state change is an auditable
+            event: who uploaded what, which criteria version scored it, who exported which memo.</p>
+        </div>
+        <div class="vstack">
+          <p style="margin:0;"><strong>Runs on-premise or on a laptop.</strong> A confidential PPM need never leave
+            the building, which matters directly for SEBI confidentiality obligations.</p>
+          <p style="margin:0;"><strong>Market-agnostic core.</strong> SEBI/AIF today; another regime is a change of
+            criteria and diligence sources, not a rewrite.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>14</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       15. LIMITS
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">What it cannot do yet</p>
+    <h2>The limits, stated plainly</h2>
+    <div class="body">
+      <p style="max-width:76ch;">We would rather you hear these from us than find them yourselves.</p>
+      <div class="limits" style="margin-top:12px;">
+        <div class="limit">
+          <span class="l-mark">01</span>
+          <span><span class="l-t">Pre-MVP. The analysis engine works end to end; <strong>the management UI is specified, not built.</strong></span>
+            <span class="l-d">Everything shown from the engine (slides 3 and 6 to 9) is real output. Everything on slides 11 to 13, including the generated information request, is a specification.</span></span>
+        </div>
+        <div class="limit">
+          <span class="l-mark">02</span>
+          <span><span class="l-t">Two regulatory checks were unevaluated on the reference run. <strong>Regulatory verification is in build.</strong></span>
+            <span class="l-d">Both are veto-tier, so that run's export carries two unevaluated vetoes. The original diagnosis (a geo-fence) was wrong: the register returns HTTP 200 to a browser user-agent and rejected only a default client string. Ordinary bot filtering, not a network block. Both checks are implementable now and are being built. Until they ship, the honest claim is document-grounded analysis with regulatory verification pending.</span></span>
+        </div>
+        <div class="limit">
+          <span class="l-mark">03</span>
+          <span><span class="l-t">~4% of quotes cannot be mechanically verified on column-heavy slides.</span>
+            <span class="l-d">They are retained and flagged <span class="mono cite-b">quote_verified: false</span>, never hidden. The verifier is tuned strict on purpose: a visible unverified quote beats a silently accepted fabricated one.</span></span>
+        </div>
+        <div class="limit">
+          <span class="l-mark">04</span>
+          <span><span class="l-t">Contested findings vary between runs.</span>
+            <span class="l-d">Surfaced as contested with both readings printed, not smoothed over into false confidence.</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>15</span>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       16. CLOSE
+       =================================================================== -->
+  <section class="slide">
+    <p class="eyebrow">Where this goes next</p>
+    <h2>What we are asking for</h2>
+    <div class="body">
+      <div class="cols-wide" style="margin-top:10px;">
+        <div class="vstack">
+          <p style="margin:0 0 6px;">The engine is validated on one real deck. What it needs now is <strong>your
+            rules and your decks</strong>, the two things we cannot supply ourselves.</p>
+          <div class="guarantees">
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">01</span>
+              <span><span class="g-t">A criteria workshop</span>
+                <span class="g-d">Half a day encoding your actual red flags, green flags and vetoes. You keep the set regardless of what follows.</span></span>
+            </div>
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">02</span>
+              <span><span class="g-t">Three decks you have already screened</span>
+                <span class="g-d">We run them against your criteria and you compare our memo to the conclusion you reached. That is the only benchmark that counts.</span></span>
+            </div>
+            <div class="guarantee">
+              <span class="g-mark" style="color:var(--accent);">03</span>
+              <span><span class="g-t">A pilot deal, run end to end</span>
+                <span class="g-d">One live deal through the loop: upload, score, route the open questions, re-run on what comes back. It is the only way to test the workflow rather than the engine.</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="vstack" style="justify-content:center;">
+          <blockquote class="pull">The acceptance standard is correctness, not time saved.</blockquote>
+          <p style="margin-top:22px;font-size:16px;">If the analysis is not good enough to change an analyst's
+            mind, no amount of management-system polish rescues it. That is why the engine was built first, and
+            why we are showing you its output before its interface.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-foot">
+      <span class="foot-brand">L1 ANALYSIS PLATFORM</span>
+      <span>16</span>
+    </div>
+  </section>
+
+  <div id="progress"></div>
+  </div>
+</div>
+
+<nav id="nav" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous slide">←</button>
+  <span id="counter">01 / 16</span>
+  <button id="next" aria-label="Next slide">→</button>
+  <button id="theme" aria-label="Toggle light or dark theme" style="font-size:11px;">◐</button>
+</nav>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var deck = document.getElementById('deck');
+  var stage = document.getElementById('stage');
+  var progress = document.getElementById('progress');
+  var counter = document.getElementById('counter');
+  var i = 0;
+
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, k) { s.classList.toggle('current', k === i); });
+    progress.style.width = ((i + 1) / slides.length * 100) + '%';
+    counter.textContent = pad(i + 1) + ' / ' + pad(slides.length);
+    if (location.hash !== '#' + (i + 1)) {
+      history.replaceState(null, '', '#' + (i + 1));
+    }
+  }
+
+  // Scale the fixed 1280x720 stage to fit any viewport. No horizontal overflow.
+  function fit() {
+    var pad = 24;
+    var sx = (window.innerWidth - pad) / 1280;
+    var sy = (window.innerHeight - pad) / 720;
+    var s = Math.min(sx, sy);
+    deck.style.transform = 'scale(' + s + ')';
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); show(0); }
+    else if (e.key === 'End') { e.preventDefault(); show(slides.length - 1); }
+  });
+
+  document.getElementById('next').addEventListener('click', function () { show(i + 1); });
+  document.getElementById('prev').addEventListener('click', function () { show(i - 1); });
+
+  document.getElementById('theme').addEventListener('click', function () {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var isDark = cur === 'dark' ||
+      (!cur && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  });
+
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', function () {
+    var n = parseInt(location.hash.slice(1), 10);
+    if (!isNaN(n)) show(n - 1);
+  });
+
+  var start = parseInt(location.hash.slice(1), 10);
+  fit();
+  show(isNaN(start) ? 0 : start - 1);
+})();
+</script>
