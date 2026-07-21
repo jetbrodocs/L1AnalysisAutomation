@@ -22,7 +22,7 @@ This table is the boundary.
 | Run telemetry: tokens, cache, model, retries | 06 §3 | ✅ Built |
 | Quote verification, 3-tier exact/layout/unverified | 06 §7 | ✅ Built (~96% on the reference deck) |
 | Invariants 6.1 – 6.4 | 06 §6 | ✅ Enforced in code, each with a test that violates it |
-| Diligence: MCA via ZaubaCorp | 06 §5 | ⚠️ **Partial** — works; IFSCA needs a browser, SEBI is geo-fenced |
+| Diligence: SEBI + MCA via ZaubaCorp | 06 §5 | ⚠️ **Partial** — SEBI AIF register + enforcement orders live over HTTP; ZaubaCorp/IFSCA still need a browser; MCA login-walled |
 | `--evidence <dir>` flag | 06 §7, 07 §11 | ❌ **Specified, not built** |
 | `attested-facts.yaml` ingestion | 07 §2b | ❌ **Specified, not built** |
 | Source verification (`CONFIRMED`/`CONTRADICTED`/`UNREACHABLE`) | 07 §2c | ❌ **Specified, not built** |
@@ -119,10 +119,12 @@ That is the Standalone Principle (§0) in practice: a CLI-only reader gets the
 same routing information a Phlo user gets, as a readable document rather than an
 interactive one.
 
-**Diligence is deliberately partial and mostly reports `unavailable`** — that is
-the correct result, not a gap. SEBI is geo-fenced from this network at the TLS
-layer, and MCA is behind a login and a CAPTCHA. See "Diligence: what can and
-cannot be checked" below.
+**Diligence is partial, and what remains unavailable is recorded with its
+cause rather than hidden.** SEBI — previously believed geo-fenced, which was a
+misdiagnosis — is now queried live: both the AIF register and the enforcement
+order search work over plain HTTP with browser headers. ZaubaCorp and IFSCA
+still need a real browser, and MCA is behind a login and a CAPTCHA. See
+"Diligence: what can and cannot be checked" below.
 
 ### Known limitation: contested findings are not reproducible
 
@@ -325,8 +327,11 @@ needs these definitions** — the values overlap in ordinary usage.
 **6. The single most important finding in this build: a prompt instruction did
 NOT prevent an unreachable source from becoming a veto.**
 
-The diligence stage correctly recorded SEBI as `unavailable`, with the geo-fence
-evidence attached. The strict scoring pass then **fired CR-0001 — a VETO — at
+The diligence stage recorded SEBI as `unavailable`, with what was then believed
+to be geo-fence evidence attached. (That diagnosis was later found wrong — SEBI
+is reachable; see the diligence table. The finding below is unaffected: it is
+about what scoring does with an `unavailable` check, whatever its cause, and
+that behaviour is unchanged for the sources that genuinely are unreachable.) The strict scoring pass then **fired CR-0001 — a VETO — at
 high confidence**, reasoning:
 
 > "The document asserts the status in words on page 37 but supplies no
@@ -705,7 +710,11 @@ with a page citation:
 | SEBI registration | **null**, recorded unresolved | — |
 
 **The SEBI registration case is the sharpest result.** Page 37 says "SEBI
-registered Category II AIF" with no number anywhere in 52 pages. Across 5+ runs
+registered Category II AIF" with no number anywhere in 52 pages. (The live
+register now supplies the missing side of this: the manager's registered trusts
+and their numbers, e.g. `IN/AIF2/22-23/1042`. The scheme itself is not
+separately registered — SEBI registers trusts — so the document's silence still
+cannot be resolved to a single number without the PPM's trust name.) Across 5+ runs
 the engine never invented one. A deterministic backstop in
 `classification.py` additionally discards any returned registration string that
 does not occur in the page text.
@@ -776,15 +785,21 @@ memo says in as many words. That is the honest output.
 
 ### Diligence: what can and cannot be checked
 
-Every verdict here was established by an actual fetch, not inferred. On the
-reference run **7 of 7 checks were `unavailable`** — and that is the correct
-result, recorded with its cause, not a failure.
+Every verdict here was established by an actual fetch, not inferred — and one
+of them was established **wrongly**, which is worth stating plainly. On the
+reference run **7 of 7 checks were `unavailable`**, and the SEBI pair was
+`unavailable` for a reason that did not exist: a geo-fence inferred from a
+stalled TLS handshake that was really Cloudflare rejecting a default user-agent.
+Re-verified 2026-07-21 with browser headers, SEBI answers normally. The lesson
+is not that `unavailable` was rendered dishonestly — the mechanism worked — but
+that **a reachability verdict gating a VETO criterion needs a positive control
+before it is trusted.**
 
 | Source | State | Consequence |
 |---|---|---|
-| SEBI register + enforcement | **Unreachable** — geo-fence/WAF below the HTTP layer | The regulatory core of diligence is unobtainable from this egress. CR-0001/CR-0002 are `veto_unevaluated`. A headless browser does **not** help. |
+| SEBI register + enforcement | **WORKS over plain HTTP** (corrected 2026-07-21) | Was wrongly recorded as geo-fenced; the real gate is Cloudflare rejecting a default UA. Both registers are server-side rendered Struts pages — session cookie + form token, no JS, no CAPTCHA. CR-0001/CR-0002 are now evaluated for real. |
 | MCA21 | **Login + CAPTCHA** | Not attempted. Deliberate access controls on a government system; route via a licensed provider. |
-| ZaubaCorp | **Browser-only** (403/timeout to plain HTTP) | Adapter written; reports `unavailable` honestly rather than "company not found". |
+| ZaubaCorp | **WORKS over plain HTTP** (upgraded 2026-07-21) | Returns the correct CIN on 3/3 attempts once the shared browser header set is sent; raw `curl` with the same UA still 403s, so it is the full header set that matters. Anti-bot edge — the `unavailable` branch is retained for when it regresses. |
 | IFSCA | **Browser-only** (empty table over HTTP) | Guarded by a row-count assertion — see VERIFIED item 7. |
 | Tofler | **Not used, by policy** | robots.txt disallows exactly the search/company paths a scraper needs. There is no code path that fetches it. |
 
@@ -997,11 +1012,14 @@ python3 -m pytest tests/test_scoring_memo.py::TestUnreachableSourcePolicy -v
    substitution — but because nothing in the engine would currently *catch* one.
    Today only an acceptance test would, and only after the run. A deterministic
    post-pass in scoring is cheap and closes the gap on principle.
-16. **Re-run diligence from an Indian IP.** This is the single highest-value
-   open item and it is a network task, not a code one. The SEBI half of
-   diligence — registration validity, intermediary status, enforcement history —
-   is the regulatory core of the product and is currently 100% `unavailable`.
-   Until then two veto criteria can never be evaluated on any Indian fund.
+16. ~~**Re-run diligence from an Indian IP.**~~ **DONE 2026-07-21, and the
+   premise was wrong.** SEBI needed browser headers, not a different egress —
+   its Cloudflare edge returns HTTP 530 to a default UA and 200 to a browser
+   one. Both SEBI checks now run live, so CR-0001 and CR-0002 are evaluated
+   rather than permanently `veto_unevaluated`. Residual SEBI work: the register
+   indexes AIF *trusts*, not managers or schemes, so resolving a scheme to its
+   parent trust still needs the PPM; and enforcement coverage is currently the
+   Orders listing only, not recovery proceedings or unserved summons.
 17. **Wire a browser into the ZaubaCorp and IFSCA adapters.** Both work in a real
    browser and both correctly report `unavailable` from plain HTTP today, so this
    is a localised change behind an existing interface. It would turn the

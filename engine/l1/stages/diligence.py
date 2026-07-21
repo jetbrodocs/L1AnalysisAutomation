@@ -11,16 +11,18 @@ whether an address matches would produce an unreproducible verdict where a token
 overlap ratio produces a reproducible one. That also makes this the cheapest
 stage in the pipeline: it costs nothing and cannot hallucinate.
 
-**Expect this stage to be mostly `unavailable`, and read that as a correct
-result rather than a broken one.** Established empirically in
-`30-analysis/india-regulatory-data-sources.md`:
+**Source reachability, re-established empirically in
+`30-analysis/india-regulatory-data-sources.md`:**
 
-  - SEBI is geo-fenced from this egress at the TLS layer. The regulatory core of
-    diligence — registration validity, intermediary status, enforcement history —
-    is therefore unobtainable here. That is the honest state of the world, and
-    the artifact says so with the evidence for it.
+  - SEBI WORKS. It is not geo-fenced — an earlier revision of this stage said it
+    was and was wrong, which left CR-0001 and CR-0002 (both VETO) permanently
+    unevaluated. SEBI's Cloudflare edge returns HTTP 530 to a default user-agent
+    and HTTP 200 to a browser one; that is bot filtering at the HTTP layer, not a
+    network block. Both the AIF register and the enforcement order search are
+    server-side-rendered Struts pages needing a session cookie and form token,
+    and both now run for real.
   - MCA is behind a login and a CAPTCHA, both deliberate access controls, which
-    the engine does not attempt to circumvent.
+    the engine does not attempt to circumvent. That position is unchanged.
   - ZaubaCorp works from a browser and 403s a plain HTTP client.
   - IFSCA works from a browser and silently returns an empty table over plain
     HTTP, which is the most dangerous failure in the set because it mimics a
@@ -72,11 +74,14 @@ from ..diligence_sources import (
 # and "someone opens a browser and looks" go to different owners, and an analyst
 # should never be handed the first.
 CHECK_TO_BLOCKER = {
-    # VERIFIED: DNS resolves and TCP/443 connects, but the connection is dropped
-    # after the TLS Client Hello. A real browser fails identically to curl, so the
-    # block is below the HTTP layer. No amount of analyst effort resolves this.
-    "sebi_registration_active": ("geo_fence", "infrastructure"),
-    "sebi_enforcement_actions": ("geo_fence", "infrastructure"),
+    # SEBI is REACHABLE and both checks now run for real. These entries survive
+    # only for the residual unavailable cases — a transient edge failure, or the
+    # AIF register returning no match on the manager's name (which is ordinary,
+    # because SEBI registers the trust rather than the manager or the scheme).
+    # Neither is an infrastructure problem: a person with the PPM can resolve the
+    # second by searching the trust name, so it is the analyst's to unblock.
+    "sebi_registration_active": (None, "manual_analyst_check"),
+    "sebi_enforcement_actions": (None, "manual_analyst_check"),
     # VERIFIED: master data redirects to a login; DIN enquiry is CAPTCHA-gated.
     # These are deliberate access controls on a government system — the route is
     # a licensed data provider, which is a purchasing decision.
@@ -163,19 +168,25 @@ def run_diligence(ctx, pages: list[str], budget, model: str | None, live: bool =
                 )
             )
     else:
-        # SEBI — known unavailable, recorded with the empirical evidence for why.
-        checks.append(sebi_registration_lookup(manager, stated_registration))
-        checks.append(sebi_enforcement_lookup(manager))
-
         # MCA — unavailable by policy (login + CAPTCHA are access controls).
         checks.append(mca_master_data_lookup(manager))
 
         if live:
+            # SEBI is a real network lookup now, not a hard-coded `unavailable`.
+            # It was previously recorded as geo-fenced without being attempted;
+            # that diagnosis was wrong (Cloudflare rejects a default UA, nothing
+            # more), so both VETO checks run for real against the live register.
+            ctx.stage_progress(stage, f"querying SEBI registers for {manager!r} …")
+            checks.append(sebi_registration_lookup(manager, stated_registration))
+            checks.append(sebi_enforcement_lookup(manager))
+
             ctx.stage_progress(stage, f"querying corporate registers for {manager!r} …")
             checks.append(zaubacorp_company_lookup(manager))
             checks.append(ifsca_directory_lookup(manager))
         else:
             for name, source in (
+                ("sebi_registration_active", "SEBI AIF register"),
+                ("sebi_enforcement_actions", "SEBI enforcement / adjudication orders"),
                 ("corporate_identity", "ZaubaCorp"),
                 ("ifsca_gift_city_registration", "IFSCA directory"),
             ):

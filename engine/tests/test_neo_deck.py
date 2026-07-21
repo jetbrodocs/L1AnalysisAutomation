@@ -198,13 +198,28 @@ class TestDiligenceAcceptance:
                 assert c["reason"], f"{c['check']} unavailable with no reason"
                 assert c["outcome"] != "passed"
 
-    def test_sebi_is_unavailable_with_the_geofence_stated(self, diligenced):
-        """VERIFIED empirically: SEBI is unreachable from this egress at the TLS
-        layer. The check must say so rather than failing the run or passing."""
+    def test_sebi_registration_check_actually_runs(self, diligenced):
+        """SEBI is reachable — the geo-fence diagnosis this test used to encode
+        was wrong. CR-0001 is a VETO, so the check must produce a real verdict;
+        and if it is unavailable, that must be for a stated reason rather than a
+        hard-coded assumption."""
         checks = {c["check"]: c for c in load_stage_artifact(diligenced, "diligence")["result"]["checks"]}
         sebi = checks["sebi_registration_active"]
-        assert sebi["outcome"] == "unavailable"
-        assert "sebi.gov.in" in sebi["reason"]
+        assert sebi["outcome"] in ("passed", "failed", "unavailable")
+        assert "geo-fence" not in (sebi["reason"] or "")
+        if sebi["outcome"] == "unavailable":
+            assert sebi["reason"]
+        else:
+            # A real query ran: it must carry the register it searched.
+            assert sebi["data"].get("register")
+
+    def test_sebi_enforcement_check_actually_runs(self, diligenced):
+        """CR-0002 is a VETO. A clean result is a finding; an unrun search must
+        never be rendered as clean."""
+        checks = {c["check"]: c for c in load_stage_artifact(diligenced, "diligence")["result"]["checks"]}
+        enf = checks["sebi_enforcement_actions"]
+        assert enf["outcome"] in ("passed", "failed", "unavailable")
+        assert "geo-fence" not in (enf["reason"] or "")
 
     def test_an_unreachable_source_never_fails_the_run(self, diligenced):
         """PRD §5 stage 3 policy: exit 0 even with every external source down."""
@@ -397,17 +412,27 @@ class TestUnresolvedContractAcceptance:
             assert e["typical_source"] is None
             assert e["unblock_owner"], f"{e['field_path']} names no owner"
 
-    def test_the_sebi_block_is_attributed_to_infrastructure(self, diligenced):
-        """VERIFIED empirically as a geo-fence below the HTTP layer. No analyst
-        effort and no manager document resolves it, so it must not be routed to
-        either."""
+    def test_a_residual_sebi_block_is_routed_to_the_analyst_not_infrastructure(
+        self, diligenced
+    ):
+        """SEBI is reachable, so it must NOT be attributed to a geo-fence.
+
+        This test used to assert `geo_fence`/`infrastructure` and passed only
+        because it skips itself when SEBI succeeds — which is now the normal
+        case. It is inverted rather than deleted because the residual unavailable
+        case is real: the AIF register indexes trusts, not managers or schemes,
+        so a manager name can legitimately match nothing. That is resolved by an
+        analyst reading the trust name off the PPM, not by an infra ticket, and
+        routing it to infrastructure would hand someone a task they cannot do."""
         entries = load_stage_artifact(diligenced, "diligence")["unresolved"]
         sebi = [e for e in entries if e["field_path"].startswith("sebi_")]
         if not sebi:
             pytest.skip("SEBI checks were not unavailable on this run")
         for e in sebi:
-            assert e["blocker_class"] == "geo_fence"
-            assert e["unblock_owner"] == "infrastructure"
+            assert e["blocker_class"] != "geo_fence", (
+                "SEBI is reachable; the geo-fence diagnosis was retracted"
+            )
+            assert e["unblock_owner"] == "manual_analyst_check"
 
     def test_a_blocked_entry_never_names_a_document_source(self, scored):
         """The routing error the contract exists to prevent."""

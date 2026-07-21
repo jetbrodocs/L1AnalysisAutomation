@@ -10,13 +10,23 @@ The reachability facts below were established empirically in
 `30-analysis/india-regulatory-data-sources.md`, against the real test case
 (Neo Asset Management Private Limited). They are not assumptions:
 
-  SEBI (www.sebi.gov.in)  UNREACHABLE from this egress. TCP connects on :443,
-                          then the connection dies after the TLS Client Hello.
-                          A real Chrome browser fails identically to curl, which
-                          places the block BELOW the HTTP layer — a geo-fence or
-                          source-IP WAF. No amount of headless-browser work
-                          fixes it. Every SEBI check therefore records
-                          `unavailable` with the geo-fence as the stated reason.
+  SEBI (www.sebi.gov.in)  WORKS over plain HTTP. It is NOT geo-fenced — an
+                          earlier verdict in this module said so and was WRONG.
+                          The actual behaviour: SEBI sits behind Cloudflare,
+                          which returns HTTP 530 to a default `curl` user-agent
+                          and HTTP 200 to a browser one. Ordinary bot filtering
+                          at the HTTP layer, not a network block below it. The
+                          old diagnosis ("TCP connects then dies after the TLS
+                          Client Hello, therefore below HTTP, therefore a
+                          browser cannot help") mistook that rejection for a
+                          layer-4 block and hard-coded `unavailable` into two
+                          VETO criteria that then never ran.
+
+                          Both registers are server-side rendered Struts pages —
+                          no JS, no CAPTCHA, no login. They need a session
+                          cookie and a form token from a seed GET, then a POST.
+                          robots.txt disallows only /js, /css and their Hindi
+                          equivalents; both paths used here are permitted.
 
   MCA (mca.gov.in)        Company master data now sits behind a login, and DIN
                           status behind a canvas CAPTCHA. Both are deliberate
@@ -43,9 +53,12 @@ The reachability facts below were established empirically in
 
 from __future__ import annotations
 
+import html
+import http.cookiejar
 import re
 import socket
 import ssl
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -54,10 +67,27 @@ from datetime import datetime, timezone
 
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
 
+# The single place outbound request headers are defined. Centralised because
+# getting this wrong is not a cosmetic failure: SEBI's Cloudflare edge returns
+# HTTP 530 to a default `curl`/urllib user-agent and HTTP 200 to a browser one,
+# and an earlier revision of this module read that 530 as proof of a geo-fence
+# and disabled two VETO criteria on the strength of it. A UA alone is sometimes
+# not enough — some edges also want a real Accept and Accept-Language — so all
+# three travel together and every adapter uses them.
+BROWSER_HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-GB,en;q=0.9",
+}
+
 DEFAULT_TIMEOUT_S = 20
+
+# Politeness delay between successive requests to the same government host. A
+# register is not a load test; the AIF search is two requests per lookup.
+POLITE_DELAY_S = 1.0
 
 PASSED = "passed"
 FAILED = "failed"
@@ -124,14 +154,7 @@ def http_get(url: str, timeout: int = DEFAULT_TIMEOUT_S) -> tuple[int | None, st
     see `ifsca_directory_lookup` for why a partial success is more dangerous than
     a failure.
     """
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-GB,en;q=0.9",
-        },
-    )
+    req = urllib.request.Request(url, headers=dict(BROWSER_HEADERS))
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             body = resp.read().decode("utf-8", errors="replace")
@@ -148,74 +171,434 @@ def http_get(url: str, timeout: int = DEFAULT_TIMEOUT_S) -> tuple[int | None, st
 
 
 # ---------------------------------------------------------------------------
-# SEBI — structurally unavailable from this egress
+# SEBI — reachable, server-side rendered, and actually checked
 # ---------------------------------------------------------------------------
+#
+# Both SEBI registers are Struts applications behind Cloudflare. The access
+# pattern is the same for each and is the reason these adapters are more than a
+# `http_get`:
+#
+#   1. GET the seed page with browser headers. This sets a JSESSIONID cookie and
+#      returns an `org.apache.struts.taglib.html.TOKEN` hidden field.
+#   2. POST the search with that cookie AND that token.
+#
+# Omitting either yields a ~21KB page with no results and no error — which looks
+# exactly like a legitimate empty result. That is the same class of trap as the
+# IFSCA empty table, so `_sebi_parse_state` below distinguishes the three cases
+# explicitly (`results` / `empty` / `unparseable`) and only `empty` is ever
+# allowed to become a negative finding.
 
-SEBI_GEOFENCE_REASON = (
-    "www.sebi.gov.in is unreachable from this network egress. VERIFIED "
-    "empirically: DNS resolves (202.191.143.30 / .158) and TCP connect to :443 "
-    "succeeds, but the connection is dropped after the TLS Client Hello. A real "
-    "Chrome browser fails identically to curl, which places the block below the "
-    "HTTP layer — a geo-fence or source-IP WAF rather than an outage or bot "
-    "detection. A headless browser does not help. Re-run this check from an "
-    "Indian IP to obtain a real result."
+SEBI_BASE = "https://www.sebi.gov.in"
+SEBI_INTERMEDIARY_ACTION = f"{SEBI_BASE}/sebiweb/other/OtherAction.do"
+SEBI_HOME_ACTION = f"{SEBI_BASE}/sebiweb/home/HomeAction.do"
+
+# VERIFIED from the live "Recognised Intermediaries" dropdown: intmId 16 is
+# "Registered Alternative Investment Funds" (1,991 entries as at Jul 20, 2026).
+SEBI_AIF_INTM_ID = "16"
+SEBI_AIF_URL = f"{SEBI_INTERMEDIARY_ACTION}?doRecognisedFpi=yes&intmId={SEBI_AIF_INTM_ID}"
+
+# VERIFIED from the Enforcement section's sub-section dropdown: sid=2 is
+# Enforcement and ssid=9 is "Orders" (adjudication, settlement, WTM orders).
+SEBI_ORDERS_SID = "2"
+SEBI_ORDERS_SSID = "9"
+SEBI_ORDERS_URL = (
+    f"{SEBI_HOME_ACTION}?doListing=yes&sid={SEBI_ORDERS_SID}&ssid={SEBI_ORDERS_SSID}&smid=0"
 )
 
+_STRUTS_TOKEN_RE = re.compile(
+    r'name="org\.apache\.struts\.taglib\.html\.TOKEN"\s+value="([^"]+)"'
+)
+_PAGINATION_RE = re.compile(r"(\d+)\s+to\s+(\d+)\s+of\s+(\d+)\s+records", re.I)
+_NO_RECORDS_RE = re.compile(r"No\s+record\(s\)\s+available", re.I)
 
-def sebi_registration_lookup(manager_name: str, registration: str | None) -> CheckResult:
-    """SEBI AIF register lookup. Always `unavailable` from this egress.
 
-    This function deliberately does NOT attempt the request. The block is at the
-    TLS layer and takes 25s to time out; attempting it per-run would add a minute
-    of latency to produce a result already known with certainty. The empirical
-    evidence for that certainty is in the reason string, so the artifact carries
-    its own justification rather than an unexplained "unavailable".
+def _sebi_session_post(
+    seed_url: str, action_url: str, fields: dict, timeout: int = DEFAULT_TIMEOUT_S
+) -> tuple[int | None, str, str | None]:
+    """Seed a SEBI session, then POST a search. Returns (status, body, error).
 
-    If SEBI later becomes reachable (different egress, or a mirror), this is the
-    one function to change — the check name and shape stay the same, so nothing
-    downstream needs to know.
+    The seed GET is not optional politeness — it is where both the session cookie
+    and the CSRF-ish Struts token come from, and a POST without them silently
+    returns an empty result page rather than an error.
     """
+    cookie_jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
+
+    try:
+        seed_req = urllib.request.Request(seed_url, headers=dict(BROWSER_HEADERS))
+        with opener.open(seed_req, timeout=timeout) as resp:
+            seed_body = resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        return exc.code, "", f"HTTP {exc.code} on seed request"
+    except (urllib.error.URLError, socket.timeout, ssl.SSLError, OSError) as exc:
+        return None, "", f"{type(exc).__name__}: {getattr(exc, 'reason', exc)}"
+
+    token_match = _STRUTS_TOKEN_RE.search(seed_body)
+    if not token_match:
+        # Not fatal — recorded so the caller can explain a subsequent empty page
+        # as a probable session failure rather than a real negative.
+        token = ""
+    else:
+        token = token_match.group(1)
+
+    payload = dict(fields)
+    payload["org.apache.struts.taglib.html.TOKEN"] = token
+
+    time.sleep(POLITE_DELAY_S)
+
+    headers = dict(BROWSER_HEADERS)
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
+    headers["Referer"] = seed_url
+    data = urllib.parse.urlencode(payload).encode()
+
+    try:
+        post_req = urllib.request.Request(action_url, data=data, headers=headers)
+        with opener.open(post_req, timeout=timeout) as resp:
+            return resp.status, resp.read().decode("utf-8", errors="replace"), None
+    except urllib.error.HTTPError as exc:
+        return exc.code, "", f"HTTP {exc.code} on search POST"
+    except (urllib.error.URLError, socket.timeout, ssl.SSLError, OSError) as exc:
+        return None, "", f"{type(exc).__name__}: {getattr(exc, 'reason', exc)}"
+
+
+def _sebi_parse_state(body: str) -> tuple[str, int]:
+    """Classify a SEBI result page: ('results', n) | ('empty', 0) | ('unparseable', 0).
+
+    The three-way split is the safety property. A page that is merely missing its
+    pagination marker is NOT the same as a page that says "No record(s)
+    available", and only the latter licenses a negative finding. A session or
+    token failure produces the former, and calling it "not registered" would be a
+    confident false negative about a VETO criterion.
+    """
+    pagination = _PAGINATION_RE.search(body)
+    if pagination:
+        return "results", int(pagination.group(3))
+    if _NO_RECORDS_RE.search(body):
+        return "empty", 0
+    return "unparseable", 0
+
+
+def _sebi_parse_intermediary_cards(body: str) -> list[dict]:
+    """Parse the AIF register's card layout into dicts.
+
+    The register renders each entity as a stack of title/value divs rather than a
+    table, so a <tr>-based parser reads zero rows off a page that is full of data.
+    """
+    records: list[dict] = []
+    for block in re.findall(
+        r'(?is)<div class="card-table-left[^"]*">(.*?)</div>\s*</div>\s*</div>', body
+    ):
+        record: dict = {}
+        for title, value in re.findall(
+            r'(?is)<div class="title"><span>(.*?)</span></div>'
+            r'<div class="value[^"]*"><span>(.*?)</span>',
+            block,
+        ):
+            key = html.unescape(re.sub(r"<[^>]*>", "", title)).strip()
+            val = html.unescape(re.sub(r"<[^>]*>", "", value)).strip()
+            if key:
+                record[key] = val
+        if record.get("Name"):
+            records.append(record)
+    return records
+
+
+def sebi_registration_lookup(
+    manager_name: str, registration: str | None, timeout: int = DEFAULT_TIMEOUT_S
+) -> CheckResult:
+    """SEBI AIF register lookup — a real query against the live register.
+
+    WHAT THIS CHECK CAN AND CANNOT ESTABLISH, because CR-0001 is a VETO and the
+    distinction decides whether a veto is honest:
+
+    SEBI registers the ALTERNATIVE INVESTMENT FUND — which in the Indian
+    structure is a TRUST — and not the manager company, and not the individual
+    scheme. VERIFIED on the reference case: searching the register for "Neo"
+    returns seven trusts including `Neo Alternatives Investment Trust`
+    (IN/AIF3/21-22/1001) and `Neo Credit Alternatives Investment Trust`
+    (IN/AIF2/22-23/1042), all carrying @neoassetmanagement.com contacts. But
+    searching "Neo Infra" or "Infra Income" returns a genuine "No record(s)
+    available", because `Neo Infra Income Opportunities Fund II` is a SCHEME of a
+    registered trust, not itself a registered entity.
+
+    So an absent scheme name is NOT evidence of an unregistered fund, and this
+    adapter must never report it as one. The search is therefore run on the
+    manager's distinctive leading token, matches are returned as supporting
+    evidence, and the outcome is `passed` when a plausibly-related registered
+    trust is found — never `failed` merely because an exact string was absent.
+    A true `failed` here would require a positive finding of non-registration,
+    which this register cannot express.
+    """
+    needle = _sebi_search_term(manager_name)
+    fields = {
+        "doRecognisedFpi": "yes",
+        "intmId": SEBI_AIF_INTM_ID,
+        "name": needle,
+        "regNo": "",
+        "contPer": "",
+        "email": "",
+        "location": "",
+        "curr_alp": "",
+        "nextValue": "1",
+    }
+    status, body, err = _sebi_session_post(
+        SEBI_AIF_URL, SEBI_INTERMEDIARY_ACTION, fields, timeout=timeout
+    )
+
+    base_data = {
+        "manager_name": manager_name,
+        "stated_registration": registration,
+        "search_term": needle,
+        "register": "SEBI Registered Alternative Investment Funds (intmId=16)",
+    }
+
+    if status is None or status >= 400:
+        return CheckResult(
+            check="sebi_registration_active",
+            source="SEBI AIF register",
+            outcome=UNAVAILABLE,
+            reason=(
+                f"The SEBI AIF register did not return a usable response "
+                f"({err or f'HTTP {status}'}). SEBI is normally reachable with browser "
+                "headers, so this is a transient failure or an edge rejection rather "
+                "than a structural block — retry before treating it as meaningful."
+            ),
+            url=SEBI_AIF_URL,
+            detail=f"No registration lookup completed for {manager_name!r}.",
+            data={**base_data, "http_status": status},
+        )
+
+    state, total = _sebi_parse_state(body)
+
+    if state == "unparseable":
+        return CheckResult(
+            check="sebi_registration_active",
+            source="SEBI AIF register",
+            outcome=UNAVAILABLE,
+            reason=(
+                "The SEBI AIF register returned HTTP 200 but the response carried "
+                "neither a pagination marker nor a 'No record(s) available' notice. "
+                "VERIFIED failure mode: a POST made without a valid JSESSIONID and "
+                "Struts token returns exactly this page. It is INDISTINGUISHABLE from "
+                "an empty result and is therefore explicitly NOT reported as one — "
+                "reporting it as 'not registered' would veto a fund on a search that "
+                "never ran."
+            ),
+            url=SEBI_AIF_URL,
+            detail=f"Registration status of {manager_name!r} not determined.",
+            data={**base_data, "http_status": status, "response_bytes": len(body)},
+        )
+
+    records = _sebi_parse_intermediary_cards(body)
+
+    if state == "empty" or not records:
+        return CheckResult(
+            check="sebi_registration_active",
+            source="SEBI AIF register",
+            outcome=UNAVAILABLE,
+            reason=(
+                f"The SEBI AIF register was searched successfully for {needle!r} and "
+                "returned no matching registered fund. This is NOT recorded as a "
+                "failed check, because SEBI registers the AIF trust rather than the "
+                "manager company or the individual scheme: a manager whose trusts are "
+                "named differently from the manager will legitimately return nothing. "
+                "Confirming registration requires the trust name or the registration "
+                "number from the fund documents, which was not available here."
+            ),
+            url=SEBI_AIF_URL,
+            detail=(
+                f"No SEBI-registered AIF matched {needle!r}. Absence of a match is not "
+                "evidence of non-registration — resolve by searching the register for "
+                "the trust name stated in the PPM."
+            ),
+            data={**base_data, "matches": 0, "register_total_reported": total},
+        )
+
+    matches = [
+        {
+            "name": r.get("Name"),
+            "registration_no": r.get("Registration No."),
+            "validity": r.get("Validity"),
+            "email": r.get("E-mail"),
+            "address": r.get("Address"),
+            "contact_person": r.get("Contact Person"),
+        }
+        for r in records
+    ]
+    stated_seen = bool(
+        registration and any((m["registration_no"] or "") == registration.strip() for m in matches)
+    )
+
     return CheckResult(
         check="sebi_registration_active",
-        source="SEBI intermediary register",
-        outcome=UNAVAILABLE,
-        reason=SEBI_GEOFENCE_REASON,
-        url="https://www.sebi.gov.in/",
+        source="SEBI AIF register",
+        outcome=PASSED,
+        url=SEBI_AIF_URL,
         detail=(
-            f"Could not verify whether {manager_name!r} holds an active SEBI AIF "
-            f"registration"
+            f"SEBI AIF register searched for {needle!r}: {len(matches)} registered "
+            f"AIF(s) found — "
+            + "; ".join(
+                f"{m['name']} ({m['registration_no']}, valid {m['validity']})"
+                for m in matches[:6]
+            )
+            + ". NOTE: SEBI registers the AIF trust, not the manager company and not "
+            "the individual scheme, so these are the manager's registered vehicles "
+            "rather than a registration of the manager itself."
             + (
-                f", nor whether the number {registration!r} stated in the document is valid."
-                if registration
-                else ". The document itself states no registration number."
+                f" The registration number {registration!r} stated in the document WAS "
+                "matched in the register."
+                if stated_seen
+                else (
+                    f" The registration number {registration!r} stated in the document "
+                    "was NOT among these entries — verify which trust the scheme sits under."
+                    if registration
+                    else " The document itself states no registration number."
+                )
             )
         ),
-        data={"manager_name": manager_name, "stated_registration": registration},
+        data={
+            **base_data,
+            "matches": len(matches),
+            "records": matches,
+            "stated_registration_matched": stated_seen,
+        },
     )
 
 
-def sebi_enforcement_lookup(manager_name: str) -> CheckResult:
-    """SEBI enforcement/adjudication order search. Unavailable, same cause.
+def sebi_enforcement_lookup(manager_name: str, timeout: int = DEFAULT_TIMEOUT_S) -> CheckResult:
+    """SEBI enforcement / adjudication order search — full-text, and real.
 
-    Worth stating plainly in the artifact: a false "no enforcement action found"
-    is materially worse than an honest "not checked". This check exists so that
-    the absence of an enforcement search is visible in the memo rather than
-    inferred from silence.
+    VERIFIED that this search actually discriminates, which matters more than
+    that it returns 200: the same query path returns 56 orders for "Reliance" and
+    a genuine "No record(s) available" for "Neo Asset Management". Without that
+    positive control, a clean result would be indistinguishable from a search
+    field that silently ignores its input.
+
+    A clean result is reported as `passed` and is a real finding. An unparseable
+    page is `unavailable`, never clean — a false "no enforcement action found" is
+    materially worse than an honest "not checked".
     """
+    needle = manager_name.strip()
+    fields = {
+        "doListing": "yes",
+        "sid": SEBI_ORDERS_SID,
+        "ssid": SEBI_ORDERS_SSID,
+        "smid": "0",
+        "ssidhidden": SEBI_ORDERS_SSID,
+        "smidhidden": "0",
+        "sectName": "Enforcement",
+        "search": needle,
+        "fromDate": "",
+        "toDate": "",
+        "deptId": "",
+        "nextValue": "1",
+    }
+    status, body, err = _sebi_session_post(
+        SEBI_ORDERS_URL, SEBI_HOME_ACTION, fields, timeout=timeout
+    )
+
+    base_data = {
+        "manager_name": manager_name,
+        "search_term": needle,
+        "register": "SEBI Enforcement > Orders (sid=2, ssid=9)",
+    }
+
+    if status is None or status >= 400:
+        return CheckResult(
+            check="sebi_enforcement_actions",
+            source="SEBI enforcement / adjudication orders",
+            outcome=UNAVAILABLE,
+            reason=(
+                f"The SEBI enforcement order search did not return a usable response "
+                f"({err or f'HTTP {status}'}). Retry before drawing any conclusion; this "
+                "is NOT a finding of no adverse history."
+            ),
+            url=SEBI_ORDERS_URL,
+            detail=f"No enforcement search completed for {manager_name!r}.",
+            data={**base_data, "http_status": status},
+        )
+
+    state, total = _sebi_parse_state(body)
+
+    if state == "unparseable":
+        return CheckResult(
+            check="sebi_enforcement_actions",
+            source="SEBI enforcement / adjudication orders",
+            outcome=UNAVAILABLE,
+            reason=(
+                "The SEBI enforcement order search returned HTTP 200 but carried "
+                "neither a pagination marker nor a 'No record(s) available' notice — "
+                "the signature of a POST that lost its session or Struts token. "
+                "Reported as unavailable rather than clean: an unrun search must never "
+                "be rendered as an absence of enforcement history."
+            ),
+            url=SEBI_ORDERS_URL,
+            detail=f"Enforcement history of {manager_name!r} not determined.",
+            data={**base_data, "http_status": status, "response_bytes": len(body)},
+        )
+
+    if state == "empty":
+        return CheckResult(
+            check="sebi_enforcement_actions",
+            source="SEBI enforcement / adjudication orders",
+            outcome=PASSED,
+            url=SEBI_ORDERS_URL,
+            detail=(
+                f"SEBI enforcement orders searched for {needle!r}: no matching order "
+                "found. The search was verified to discriminate (the same query path "
+                "returns 56 orders for a known-litigated name), so this is a genuine "
+                "clean result rather than an unrun search. Scope caveat: this covers "
+                "the Enforcement > Orders section only — it does not cover recovery "
+                "proceedings, unserved summons, or actions by other regulators."
+            ),
+            data={**base_data, "orders_found": 0},
+        )
+
+    titles = []
+    for row in re.findall(r"(?is)<tr[^>]*>(.*?)</tr>", body):
+        cells = [
+            re.sub(r"\s+", " ", re.sub(r"<[^>]*>", " ", c)).strip()
+            for c in re.findall(r"(?is)<td[^>]*>(.*?)</td>", row)
+        ]
+        if len(cells) >= 2 and cells[1]:
+            titles.append({"date": cells[0], "title": cells[1][:200]})
+
     return CheckResult(
         check="sebi_enforcement_actions",
         source="SEBI enforcement / adjudication orders",
-        outcome=UNAVAILABLE,
-        reason=SEBI_GEOFENCE_REASON,
-        url="https://www.sebi.gov.in/enforcement.html",
+        outcome=FAILED,
+        url=SEBI_ORDERS_URL,
         detail=(
-            f"No search for enforcement, adjudication, or debarment proceedings "
-            f"against {manager_name!r} was performed. This is NOT a finding of no "
-            "adverse history — it is the absence of a search. Treat as an open item "
-            "requiring manual check."
+            f"SEBI enforcement order search for {needle!r} returned {total} matching "
+            f"order(s). These are keyword matches on the order listing and REQUIRE "
+            "manual review — a match may name an unrelated party, a different entity "
+            "with a similar name, or a complainant rather than a respondent. "
+            + "; ".join(f"[{t['date']}] {t['title']}" for t in titles[:5])
         ),
-        data={"manager_name": manager_name},
+        data={**base_data, "orders_found": total, "sample_orders": titles[:25]},
     )
+
+
+def _sebi_search_term(manager_name: str) -> str:
+    """Reduce a manager name to the distinctive token(s) SEBI's register indexes.
+
+    The register does substring matching (VERIFIED: 'Alternatives Investment
+    Trust' returns four trusts across three managers), but it matches literally —
+    so a full legal name like 'Neo Asset Management Private Limited' matches
+    nothing, while 'Neo' returns the manager's seven registered trusts. Legal-form
+    and generic asset-management words are therefore dropped, and the leading
+    distinctive token is what gets searched.
+    """
+    cleaned = re.sub(r"[^A-Za-z0-9 ]+", " ", manager_name).strip()
+    drop = {
+        "private", "limited", "pvt", "ltd", "llp", "inc", "corp",
+        "asset", "management", "managers", "advisors", "advisers",
+        "capital", "investment", "investments", "partners", "fund", "funds",
+        "trustee", "trustees", "company", "co",
+    }
+    tokens = [t for t in cleaned.split() if t]
+    core = [t for t in tokens if t.lower() not in drop]
+    return (core[0] if core else (tokens[0] if tokens else manager_name)).strip()
 
 
 # ---------------------------------------------------------------------------
@@ -295,10 +678,16 @@ def zaubacorp_company_lookup(manager_name: str, timeout: int = DEFAULT_TIMEOUT_S
     explicitly not treated as authoritative — that framing is carried into the
     artifact so the memo cannot present it as a registry confirmation.
 
-    ALSO VERIFIED: plain curl gets HTTP 403 from ZaubaCorp; a real browser loads
-    fine. So this adapter will usually return `unavailable` when run from a plain
-    HTTP client, and that is the honest outcome — an anti-bot 403 is a source we
-    did not reach, not a company that does not exist.
+    UPDATED 2026-07-21: this adapter now WORKS over plain HTTP. Re-tested after
+    the browser headers were centralised, it returned the correct CIN
+    (U67100MH2021PTC371799) on 3 of 3 consecutive attempts. Note that raw `curl`
+    with the same UA still gets HTTP 403, so the UA alone is not what satisfies
+    ZaubaCorp's edge — the full urllib header set does. That is precisely why the
+    headers live in one constant rather than being spelled out per adapter.
+
+    The `unavailable` branch below is retained and still correct: this is an
+    anti-bot edge that can start returning 403 again at any time, and a 403 is a
+    source we did not reach, not a company that does not exist.
     """
     slug = _slugify_company(manager_name)
     url = f"https://www.zaubacorp.com/companysearchresults/{urllib.parse.quote(slug)}"

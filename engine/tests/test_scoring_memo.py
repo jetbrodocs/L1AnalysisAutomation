@@ -424,12 +424,79 @@ class TestDiligenceOutcomes:
         assert r.outcome == UNAVAILABLE
         assert "not a finding" in r.reason
 
-    def test_sebi_lookup_always_reports_the_geofence_as_the_reason(self):
-        from l1.diligence_sources import sebi_registration_lookup
+    def test_sebi_register_hit_is_passed_with_the_registration_numbers(self, monkeypatch):
+        """SEBI is reachable. A search that returns registered trusts is a real
+        `passed` — this is the case that was impossible while the module
+        hard-coded a geo-fence it had misdiagnosed."""
+        import l1.diligence_sources as ds
 
-        r = sebi_registration_lookup("Neo Asset Management Private Limited", None)
+        page = (
+            "<p>1 to 1 of 1 records</p>"
+            '<div class="card-table-left">'
+            '<div class="title"><span>Name</span></div>'
+            '<div class="value"><span>Neo Credit Alternatives Investment Trust</span></div>'
+            '<div class="title"><span>Registration No.</span></div>'
+            '<div class="value"><span>IN/AIF2/22-23/1042</span></div>'
+            "</div></div></div>"
+        )
+        monkeypatch.setattr(
+            ds, "_sebi_session_post", lambda *a, **k: (200, page, None)
+        )
+        r = ds.sebi_registration_lookup("Neo Asset Management Private Limited", None)
+        assert r.outcome == PASSED
+        assert r.data["matches"] == 1
+        assert r.data["records"][0]["registration_no"] == "IN/AIF2/22-23/1042"
+
+    def test_sebi_page_without_pagination_or_empty_notice_is_unavailable(self, monkeypatch):
+        """THE SEBI TRAP: a POST that loses its session cookie or Struts token
+        returns HTTP 200 with neither a pagination marker nor a 'No record(s)
+        available' notice. Reporting that as 'not registered' would veto a fund
+        on a search that never ran."""
+        import l1.diligence_sources as ds
+
+        monkeypatch.setattr(
+            ds, "_sebi_session_post", lambda *a, **k: (200, "<html>shell only</html>", None)
+        )
+        r = ds.sebi_registration_lookup("Neo Asset Management Private Limited", None)
         assert r.outcome == UNAVAILABLE
-        assert "geo-fence" in r.reason or "TLS Client Hello" in r.reason
+        assert r.outcome != FAILED
+
+        r2 = ds.sebi_enforcement_lookup("Neo Asset Management Private Limited")
+        assert r2.outcome == UNAVAILABLE, "an unrun enforcement search read as clean"
+
+    def test_sebi_empty_register_result_is_never_a_failed_registration(self, monkeypatch):
+        """SEBI registers the AIF trust, not the manager or the scheme, so a
+        manager name matching nothing is ordinary rather than adverse. It must
+        not become a VETO."""
+        import l1.diligence_sources as ds
+
+        monkeypatch.setattr(
+            ds,
+            "_sebi_session_post",
+            lambda *a, **k: (200, "<p>No record(s) available</p>", None),
+        )
+        r = ds.sebi_registration_lookup("Neo Asset Management Private Limited", None)
+        assert r.outcome == UNAVAILABLE
+        assert r.outcome != FAILED
+
+    def test_sebi_enforcement_hit_is_failed_and_empty_is_passed(self, monkeypatch):
+        """The enforcement search discriminates (VERIFIED: 56 orders for a
+        known-litigated name, none for the reference manager), so a clean result
+        is a genuine finding rather than an unrun search."""
+        import l1.diligence_sources as ds
+
+        monkeypatch.setattr(
+            ds,
+            "_sebi_session_post",
+            lambda *a, **k: (200, "<p>No record(s) available</p>", None),
+        )
+        assert ds.sebi_enforcement_lookup("Neo Asset Management").outcome == PASSED
+
+        hit = "<p>1 to 1 of 1 records</p><table><tr><td>Jan 01, 2026</td><td>Order against X</td></tr></table>"
+        monkeypatch.setattr(ds, "_sebi_session_post", lambda *a, **k: (200, hit, None))
+        r = ds.sebi_enforcement_lookup("X")
+        assert r.outcome == FAILED
+        assert r.data["orders_found"] == 1
 
     def test_ifsca_empty_table_over_http_is_unavailable_never_a_negative(self, monkeypatch):
         """THE TRAP: a plain GET returns HTTP 200 with a table shell and zero
@@ -1064,16 +1131,25 @@ class TestDiligenceBlockerAttribution:
         from l1.stages.diligence import CHECK_TO_BLOCKER
         from l1.unresolved import BLOCKER_CLASSES, UNBLOCK_OWNERS
         for check, (blocker, owner) in CHECK_TO_BLOCKER.items():
-            assert blocker in BLOCKER_CLASSES, f"{check}: bad blocker {blocker}"
+            # None is a valid blocker_class (schema allows null) — used where a
+            # check normally succeeds and its residual unavailable cases have no
+            # single structural cause.
+            assert blocker is None or blocker in BLOCKER_CLASSES, (
+                f"{check}: bad blocker {blocker}"
+            )
             assert owner in UNBLOCK_OWNERS, f"{check}: bad owner {owner}"
 
-    def test_the_sebi_geofence_is_owned_by_infrastructure_not_an_analyst(self):
-        """VERIFIED as a block below the HTTP layer — a real browser fails
-        identically to curl. No analyst effort resolves it, so routing it to an
-        analyst would be handing someone an impossible task."""
+    def test_sebi_is_not_attributed_to_an_infrastructure_geofence(self):
+        """SEBI is reachable with browser headers; the geo-fence diagnosis was
+        wrong. Routing its residual failures to `infrastructure` would send an
+        analyst-resolvable gap (search the trust name from the PPM) to a team
+        that cannot act on it, and would imply a network block that does not
+        exist."""
         from l1.stages.diligence import CHECK_TO_BLOCKER
         for check in ("sebi_registration_active", "sebi_enforcement_actions"):
-            assert CHECK_TO_BLOCKER[check] == ("geo_fence", "infrastructure")
+            blocker, owner = CHECK_TO_BLOCKER[check]
+            assert blocker != "geo_fence"
+            assert owner == "manual_analyst_check"
 
     def test_a_browser_only_source_is_owned_by_an_analyst_not_infrastructure(self):
         """ZaubaCorp and IFSCA work in a real browser today, so a person can do
@@ -1082,14 +1158,20 @@ class TestDiligenceBlockerAttribution:
         for check in ("corporate_identity", "ifsca_gift_city_registration"):
             assert CHECK_TO_BLOCKER[check][1] == "manual_analyst_check"
 
-    def test_scoring_inherits_the_blocker_from_the_check_that_caused_it(self):
+    def test_scoring_inherits_the_blocker_from_the_check_that_caused_it(self, monkeypatch):
+        """The blocker travels from the unavailable check to the criterion it
+        informs. Uses MCA, which has a genuine structural blocker (login wall),
+        mapped onto CR-0001 for the duration of this test."""
+        import l1.stages.diligence as dil_stage
         from l1.stages.scoring import _blocker_for_criterion, _owner_for_criterion
+
+        monkeypatch.setitem(dil_stage.CHECK_TO_CRITERIA, "mca_master_data", ["CR-0001"])
         dil = {"result": {"checks": [{
-            "check": "sebi_registration_active", "outcome": "unavailable",
-            "source": "SEBI", "reason": "geo-fenced",
+            "check": "mca_master_data", "outcome": "unavailable",
+            "source": "MCA", "reason": "login required",
         }]}}
-        assert _blocker_for_criterion("CR-0001", dil) == "geo_fence"
-        assert _owner_for_criterion("CR-0001", dil) == "infrastructure"
+        assert _blocker_for_criterion("CR-0001", dil) == "login_required"
+        assert _owner_for_criterion("CR-0001", dil) == "procurement"
 
     def test_an_unattributable_blocker_still_names_an_owner(self):
         """An unattributed blocker reads as nobody's problem, so the fallback is

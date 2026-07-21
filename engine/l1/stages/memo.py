@@ -111,6 +111,109 @@ def _val(node) -> str:
     return f"{raw}{suffix}"
 
 
+# A few extraction values are stored in machine form (`without_catch_up`) or
+# carry the surrounding parenthesis of the phrase they were quoted from
+# ("(Hurdle Rate 10%)"). Both are correct in the artifact and wrong in a table a
+# human reads. Presentation is fixed here; the artifact is not rewritten.
+_ENUM_LABEL = {
+    "without_catch_up": "without catch-up",
+    "with_catch_up": "with catch-up",
+    "yes": "yes",
+    "no": "no",
+    "gross": "gross",
+    "net": "net",
+}
+
+
+def _tidy_value(raw: str) -> str:
+    text = str(raw).strip()
+    if text in _ENUM_LABEL:
+        return _ENUM_LABEL[text]
+    # Strip a parenthesis that wraps the entire value, never one inside it.
+    if text.startswith("(") and text.endswith(")") and "(" not in text[1:-1]:
+        text = text[1:-1].strip()
+    return text
+
+
+def _confidence_note(node) -> str:
+    """The inference/confidence qualifier for a field, or empty.
+
+    Rendered as plain words, not a symbol: a reader in a text editor must be able
+    to tell a stated fact from a deduced one without a legend. `medium`/`low`
+    confidence on an extraction is the engine saying it read between the lines,
+    and a value presented without that qualifier is a stronger claim than the
+    document supports.
+    """
+    if not isinstance(node, dict):
+        return ""
+    conf = node.get("confidence")
+    if conf in ("medium", "low"):
+        return f" [inferred — {conf} confidence]"
+    return ""
+
+
+# The index's fund-facts block. Kept to the figures an IC asks for first, each
+# one carrying the page it was read from. Ordered as a reader asks them, not as
+# the extraction schema happens to nest them.
+INDEX_FACT_SPEC: list[tuple[str, tuple[str, ...]]] = [
+    ("Target size", ("fund_terms", "fund_size")),
+    ("Target return", ("fund_terms", "target_return")),
+    ("Return basis", ("fund_terms", "target_return_basis")),
+    ("Fund term", ("fund_terms", "fund_term")),
+    ("Investment period", ("fund_terms", "investment_period")),
+    ("Exit period", ("fund_terms", "exit_period")),
+    ("Drawdowns", ("fund_terms", "drawdowns")),
+    ("Minimum commitment", ("fund_terms", "minimum_commitment")),
+    ("Hurdle rate", ("economics", "hurdle_rate")),
+    ("Carried interest", ("economics", "carry")),
+    ("Catch-up", ("economics", "catch_up")),
+    ("Management fee", ("economics", "management_fee")),
+    ("Target investments", ("portfolio_construction", "target_investment_count")),
+    ("Geography", ("portfolio_construction", "geography")),
+]
+
+# Fields whose ABSENCE is itself a finding. These are not "missing data" — a fund
+# that does not disclose its sponsor commitment has told you something, and the
+# index must say so in the same breath as the facts that were found. Rendering
+# them only when present would hide the strongest signal in the extraction.
+INDEX_ABSENCE_SPEC: list[tuple[str, tuple[str, ...], str]] = [
+    (
+        "Net return disclosed",
+        ("economics", "net_return_disclosed"),
+        "returns are presented gross; no net-of-fee figure is given",
+    ),
+    (
+        "GP / sponsor commitment",
+        ("economics", "gp_commitment"),
+        "no sponsor commitment is stated anywhere in the document",
+    ),
+    (
+        "Key-person clause",
+        ("team", "key_person_clause"),
+        "no key-person provision is stated",
+    ),
+    (
+        "Valuation policy",
+        ("portfolio_construction", "valuation_policy"),
+        "no valuation policy is stated",
+    ),
+    (
+        "Realised DPI",
+        ("track_record", "realised_dpi"),
+        "no realised distribution figure is given for the predecessor fund",
+    ),
+]
+
+
+def _dig(result: dict, path: tuple[str, ...]):
+    node = result
+    for key in path:
+        if not isinstance(node, dict):
+            return None
+        node = node.get(key)
+    return node
+
+
 def render_fund_facts(cls: dict, ext: dict) -> str:
     """Section 3 — direct render of classification + extraction. Zero model calls."""
     c, e = cls["result"], ext["result"]
@@ -806,6 +909,42 @@ def _agreement_label(scoring_result: dict) -> str:
     return f"{round(float(rate) * 100, 1)}%"
 
 
+def _index_counts(unresolved_by_stage: dict, extraction_result: dict) -> set[str]:
+    """Counts the index computes about itself, for the §6.4 corpus.
+
+    The open-questions total, its per-kind counts, the blocked owner tallies and
+    the number of undisclosed fields are all engine arithmetic over the
+    artifacts — real quantities that appear in no artifact field. Same principle
+    as `_section_12_counts`: declared by the code that prints them, never
+    exempted by a magnitude rule.
+    """
+    from ..memo_checks import _canonical_numbers
+    from ..unresolved import group_by_kind
+
+    out: set[str] = set()
+    all_open = [e for entries in (unresolved_by_stage or {}).values() for e in entries]
+    out |= _canonical_numbers(str(len(all_open)))
+
+    grouped = group_by_kind(all_open)
+    for kind, entries in grouped.items():
+        out |= _canonical_numbers(str(len(entries)))
+
+    owners: dict[str, int] = {}
+    for entry in grouped.get("EXTERNALLY_BLOCKED") or []:
+        owner = entry.get("unblock_owner") or "manual_analyst_check"
+        owners[owner] = owners.get(owner, 0) + 1
+    for count in owners.values():
+        out |= _canonical_numbers(str(count))
+
+    absences = 0
+    for _label, path, _meaning in INDEX_ABSENCE_SPEC:
+        node = _dig(extraction_result or {}, path)
+        if node is None or (isinstance(node, dict) and node.get("value") == "no"):
+            absences += 1
+    out |= _canonical_numbers(str(absences))
+    return out
+
+
 def _index_numbers(scoring_result: dict, cost_usd: float | None = None) -> set[str]:
     """Numbers the index computes about the run, for the §6.4 corpus.
 
@@ -1070,11 +1209,145 @@ def build_index(
         "",
     ]
 
+    # How the weights were arrived at. Published on the index because an IC that
+    # cannot reproduce the arithmetic behind a recommendation is right to
+    # distrust it, and the sum is four rows long.
+    model = s.get("scoring_model") or {}
+    red_contrib = model.get("red_contributions") or []
+    green_contrib = model.get("green_contributions") or []
+    if red_contrib or green_contrib:
+        out += [
+            "### How the weights are computed",
+            "",
+            f"`{model.get('formula', 'score_contribution = severity_multiplier * author_weight')}`",
+            "",
+            "| Criterion | Severity | Multiplier | Author weight | Contribution |",
+            "|---|---|---|---|---|",
+        ]
+        for row in red_contrib:
+            out.append(
+                f"| {row.get('criterion_code')} | {row.get('severity')} | "
+                f"{model.get('severity_multipliers', {}).get(row.get('severity'), '')} | "
+                f"{row.get('author_weight')} | {row.get('contribution')} |"
+            )
+        if red_contrib:
+            out.append(
+                f"| **Red-flag weight** | | | | **{s.get('red_flag_weight')}** |"
+            )
+        for row in green_contrib:
+            out.append(
+                f"| {row.get('criterion_code')} | {row.get('severity')} | "
+                f"{model.get('severity_multipliers', {}).get(row.get('severity'), '')} | "
+                f"{row.get('author_weight')} | {row.get('contribution')} |"
+            )
+        if green_contrib:
+            out.append(
+                f"| **Green-flag weight** | | | | **{s.get('green_flag_weight')}** |"
+            )
+        out.append("")
+
+    # Unevaluated vetoes carry the heaviest multiplier in the model and
+    # contribute nothing — because they were never checked, not because they
+    # passed. Printing "0.0" beside a CRITICAL veto reads as "no problem here",
+    # which is the precise misreading this block exists to prevent.
+    unevaluated_veto = s.get("veto_unevaluated") or []
+    if unevaluated_veto:
+        mult = (model.get("severity_multipliers") or {}).get("CRITICAL")
+        by_code = {f.get("criterion_code"): f for f in (s.get("findings") or [])}
+        out += [
+            "### Weight that was never applied",
+            "",
+            "| Criterion | Severity | Multiplier | Contribution | Why |",
+            "|---|---|---|---|---|",
+        ]
+        for code in unevaluated_veto:
+            finding = by_code.get(code) or {}
+            sev = finding.get("severity") or "CRITICAL"
+            out.append(
+                f"| {code} | {sev} | "
+                f"{finding.get('severity_multiplier', mult)} | "
+                "— not scored | the check could not be performed |"
+            )
+        out += [
+            "",
+            "**These are not zeroes.** Each carries the heaviest multiplier in the "
+            "model and contributed nothing because it was never evaluated. Their "
+            "absence from the score is a gap in the arithmetic, not a point in the "
+            "fund's favour.",
+            "",
+        ]
+
     if s.get("veto_unevaluated"):
         out += [
             "> No veto fired — but no veto was cleared either. The checks the "
             "unevaluated veto criteria depend on could not be performed, so they "
             "are neither fired nor clean.",
+            "",
+        ]
+
+    # --- Fund facts -------------------------------------------------------
+    # On the index rather than only in section 3, because the standalone reader
+    # (PRD §0) forms a view from this file alone, and a recommendation without
+    # the terms it was formed against is an opinion. Every row carries its page.
+    e = (ext or {}).get("result") or {}
+    fact_rows: list[str] = []
+    for label, path in INDEX_FACT_SPEC:
+        node = _dig(e, path)
+        if node is None:
+            continue
+        raw = node.get("as_written") if isinstance(node, dict) else None
+        if raw is None and isinstance(node, dict):
+            raw = node.get("value")
+        if raw is None:
+            continue
+        page = node.get("page") if isinstance(node, dict) else None
+        value = _tidy_value(raw) + (f" (p.{page})" if page else "")
+        fact_rows.append(f"| {label} | {value}{_confidence_note(node)} |")
+
+    if fact_rows:
+        out += [
+            "## Fund facts",
+            "",
+            "| Field | Value (page) |",
+            "|---|---|",
+            *fact_rows,
+            "",
+            "Every value above was read from the page named beside it. Values marked "
+            "`[inferred]` were deduced by the engine rather than stated in those terms "
+            "by the document — they carry less weight than a quoted figure. "
+            "Full detail: [section 3](./03-fund-facts.md), "
+            "[section 6](./06-fees-and-terms.md).",
+            "",
+        ]
+
+    # --- Absences ---------------------------------------------------------
+    # Reported as findings in their own right. A reader scanning for what the
+    # document says must not have to notice what it fails to say.
+    absence_rows: list[str] = []
+    for label, path, meaning in INDEX_ABSENCE_SPEC:
+        node = _dig(e, path)
+        if node is None:
+            absence_rows.append(f"| **{label}** | NOT DISCLOSED | {meaning} |")
+            continue
+        if isinstance(node, dict) and node.get("value") == "no":
+            page = node.get("page")
+            where = f" (p.{page})" if page else ""
+            absence_rows.append(f"| **{label}** | NO{where} | {meaning} |")
+
+    if absence_rows:
+        out += [
+            f"## Not disclosed — {len(absence_rows)}",
+            "",
+            "These are findings, not gaps in the analysis. The engine searched for "
+            "each one and the document does not contain it.",
+            "",
+            "| Field | Status | What the absence means |",
+            "|---|---|---|",
+            *absence_rows,
+            "",
+            "**An absence is not a neutral result.** A fund that does not state its "
+            "sponsor commitment, its key-person provision or its net-of-fee return "
+            "has told you something about all three.",
             "",
         ]
 
@@ -1292,6 +1565,9 @@ def run_memo(ctx, pages: list[str], budget, model: str | None) -> dict:
             # The index computes an agreement percentage and restates the
             # scorecard weights. Same principle — declared, not exempted.
             *_index_numbers(s, index_cost),
+            # The index's own tallies: the open-questions total and its per-kind
+            # and per-owner splits, and the count of undisclosed fields.
+            *_index_counts(unresolved_by_stage, (ext or {}).get("result") or {}),
         },
     )
     # EVERY file, not just the first. A fabricated figure in `08-track-record.md`

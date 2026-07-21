@@ -2,7 +2,7 @@
 title: India Regulatory & Corporate Data Sources — Programmatic Access Assessment
 status: draft
 created: 2026-07-20
-updated: 2026-07-20
+updated: 2026-07-21
 tags:
   - analysis
   - diligence
@@ -29,7 +29,9 @@ Every claim is marked:
 - **VERIFIED** — a request was actually issued and the response observed (status code, content, block page).
 - **UNVERIFIED** — inferred, remembered, or read from a site's own description without confirming it end to end.
 
-**One environment caveat that colours the whole report.** This assessment ran from a **US-based network egress**. `www.sebi.gov.in` was unreachable from every path tried. That is almost certainly a geo-restriction, **not** a statement about accessibility from India. Do not treat the SEBI verdicts as final until they are re-run from an Indian IP. This is the single biggest open question in this document.
+**A second verdict changed.** ZaubaCorp was recorded ACCESSIBLE-BROWSER on the assumption that plain HTTP always drew a 403. With the browser header set applied it now returns the correct CIN over plain HTTP on 3/3 attempts — no browser needed. IFSCA and MCA were re-tested at the same time and are **unchanged**: IFSCA still renders its directory client-side (0 populated rows over HTTP) and MCA still requires login + CAPTCHA.
+
+**Environment note — and a correction.** The original assessment ran from a US egress and concluded `www.sebi.gov.in` was geo-fenced. **That conclusion was wrong and has been retracted.** SEBI's Cloudflare edge rejects a default `curl` user-agent (HTTP 530) and serves a browser one normally (HTTP 200); the original TLS-stall signature was misread as a network-layer block. Re-verified 2026-07-21 from an Indian egress with browser headers: **SEBI is fully accessible over plain HTTP, server-side rendered, and searchable — no JS, no CAPTCHA, no login.** All SEBI verdicts below are re-derived from live fetches on that date.
 
 ---
 
@@ -66,7 +68,7 @@ Every claim is marked:
 
 **Note the discrepancy — it is a finding, not noise.** The two aggregators disagree on both the NIC segment of the CIN (`U67100` vs `U66300`) and on the director list. ZaubaCorp appears to carry a stale snapshot including departed directors; Tofler is dated 15 Jul 2026. **Any v1 build must treat aggregator data as needing a freshness check and ideally cross-source confirmation, not as ground truth.**
 
-What was **NOT** obtained for this entity: its SEBI AIF registration number, and confirmation of the fund itself. SEBI was unreachable (see below). **The corporate-identity half of diligence is proven; the regulatory-registration half is not.**
+**UPDATED 2026-07-21.** The SEBI half is now proven too. The register yields the manager's registered AIF trusts and their registration numbers — e.g. `Neo Credit Alternatives Investment Trust` / `IN/AIF2/22-23/1042`, valid Apr 05, 2022 – Perpetual (§1). What is still **NOT** obtainable from the register is a registration for the *scheme* `Neo Infra Income Opportunities Fund II`, because SEBI registers trusts rather than schemes — an absence that is structural and must not be read as non-registration. **Both halves of diligence are now proven; the residual gap is scheme-to-trust resolution, which needs the PPM.**
 
 ---
 
@@ -76,15 +78,15 @@ Verdict vocabulary as requested: ACCESSIBLE-HTTP / ACCESSIBLE-BROWSER / CAPTCHA-
 
 | # | Source | URL | Verdict | Evidence |
 |---|---|---|---|---|
-| 1 | SEBI main site & intermediary registers | `www.sebi.gov.in` | **UNAVAILABLE (from this network)** | VERIFIED unreachable |
-| 2 | SEBI intermediary sub-portal | `siportal.sebi.gov.in` | **UNAVAILABLE (stub)** | VERIFIED |
-| 3 | SEBI enforcement / orders | under `www.sebi.gov.in` | **UNVERIFIED** | Not reachable to test |
+| 1 | SEBI main site & AIF register | `www.sebi.gov.in` …`intmId=16` | **ACCESSIBLE-HTTP** ⟵ *corrected 2026-07-21* | VERIFIED 200 + 1,991 entries; browser UA required |
+| 2 | SEBI intermediary sub-portal | `siportal.sebi.gov.in` | **UNAVAILABLE (stub)** | VERIFIED — superseded by #1 |
+| 3 | SEBI enforcement / orders | `…sid=2&ssid=9` | **ACCESSIBLE-HTTP** ⟵ *corrected 2026-07-21* | VERIFIED full-text; positive control passed |
 | 4 | SEBI SCORES | `scores.sebi.gov.in` | **PARTIAL / LOGIN-REQUIRED** | VERIFIED reachable |
 | 5 | MCA V3 — Master Data Services | `mca.gov.in/.../MDS.html` | **LOGIN-REQUIRED** | VERIFIED |
 | 6 | MCA V3 — legacy V2 URLs | `/mcafoportal/*.do` | **UNAVAILABLE (retired)** | VERIFIED |
 | 7 | MCA V3 — Enquire DIN Status | `.../enquire-din-status.html` | **CAPTCHA-BLOCKED** | VERIFIED |
 | 8 | IFSCA Directory (GIFT City) | `ifsca.gov.in/DirectoryList` | **ACCESSIBLE-BROWSER** | VERIFIED, data retrieved |
-| 9 | ZaubaCorp | `zaubacorp.com` | **ACCESSIBLE-BROWSER** | VERIFIED, data retrieved |
+| 9 | ZaubaCorp | `zaubacorp.com` | **ACCESSIBLE-HTTP** ⟵ *upgraded 2026-07-21* | VERIFIED: correct CIN on 3/3 plain-HTTP attempts with full browser headers. Raw `curl` still 403s — the complete header set, not the UA alone, is what works. Anti-bot edge, so may regress. |
 | 10 | Tofler | `tofler.in` | **ACCESSIBLE-BROWSER (partial) / PAID** | VERIFIED, data retrieved |
 | 11 | NSE | `nseindia.com` | **ACCESSIBLE-BROWSER** (curl 403) | VERIFIED blocked on HTTP |
 | 12 | BSE | `bseindia.com` | **ACCESSIBLE-HTTP** | VERIFIED 200 |
@@ -93,27 +95,71 @@ Verdict vocabulary as requested: ACCESSIBLE-HTTP / ACCESSIBLE-BROWSER / CAPTCHA-
 
 ---
 
-### 1. SEBI — `www.sebi.gov.in` — UNAVAILABLE from this network
+### 1. SEBI — `www.sebi.gov.in` — ACCESSIBLE-HTTP
 
-**This is the most important negative result.**
+> **CORRECTION (2026-07-21).** This section previously read "UNAVAILABLE — geo-fenced" and was **wrong**. The error was consequential: it propagated into the engine, the PRDs, and a client deck, and it left CR-0001 and CR-0002 — both VETO criteria — permanently unevaluated. The corrected finding is below; the original reasoning is dissected under "why the first diagnosis was wrong" so the failure mode is not repeated.
 
-VERIFIED observations:
+**SEBI is fully accessible over plain HTTP. It is not geo-fenced.**
 
-- `curl https://www.sebi.gov.in/` → **status `000`**, timeout after 25s.
-- DNS resolves fine: `202.191.143.30`, `202.191.143.158`.
-- **TCP connect to port 443 SUCCEEDS** on both IPs (`nc -z` → "succeeded").
-- TLS then stalls: curl verbose shows `Connected to www.sebi.gov.in (202.191.143.30) port 443` → `TLS handshake, Client hello (1)` → `Connection timed out`.
-- Real Chrome browser → `ERR_TIMED_OUT`, `chrome-error://chromewebdata/`.
-- `WebFetch` (separate egress) → `ETIMEDOUT`.
-- Third-party proxy (allorigins) → 500. `r.jina.ai` → 403. Google cache → dead.
+VERIFIED 2026-07-21, from an Indian egress (AS55836 Reliance Jio, Ahmedabad):
 
-**Interpretation (UNVERIFIED but strongly supported):** the server accepts the TCP connection then silently drops after Client Hello. That signature — TCP open, TLS dropped — is characteristic of a **geo-fence or WAF filtering by source IP**, not of an outage and not of bot detection. A browser fails identically to curl, which means **no amount of headless-browser work fixes this**; the block is below the HTTP layer.
+| Request | Result |
+|---|---|
+| `curl https://www.sebi.gov.in/` with default curl UA | **HTTP 530** |
+| Same URL with a browser `User-Agent` | **HTTP 200**, 57,274 bytes |
+| `…/OtherAction.do?doRecognisedFpi=yes&intmId=16` (AIF register) | **HTTP 200**, 116,416 bytes |
+| `…/HomeAction.do?doListing=yes&sid=2&ssid=9&smid=0` (enforcement orders) | **HTTP 200** |
 
-**Action required:** re-test every SEBI URL from an Indian IP before making any build decision. Until then all SEBI verdicts are provisional.
+The gate is **Cloudflare bot filtering at the HTTP layer**, which rejects a default `curl`/urllib user-agent with HTTP 530 and serves a browser user-agent normally. Ordinary bot filtering — not a network block, not a geo-fence.
 
-Sub-portal `siportal.sebi.gov.in` **is** reachable (HTTP 200) — VERIFIED, so the block is host-specific rather than blanket-SEBI. But `siportal.sebi.gov.in/intermediary/AIFDetails.html` returns a 109-character stub reading "Site under construction / Please click here to re-login", © 2016 — VERIFIED. No data.
+Working header set (all three sent together; a UA alone is sometimes not enough):
 
-**Unanswered by this assessment (UNVERIFIED):** AIF register URL and search mechanism; whether enforcement/adjudication orders are full-text searchable; whether bulk downloads exist. These are exactly questions 1, 2 and 4 of the brief and they remain open.
+```
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-GB,en;q=0.9
+```
+
+`robots.txt` VERIFIED permissive — it disallows only `/js`, `/css` and their Hindi equivalents. Both paths used below are permitted.
+
+**Why the first diagnosis was wrong.** The original assessment observed a TCP connect followed by a stalled TLS handshake and inferred a block *below* the HTTP layer, concluding that "no amount of headless-browser work fixes this". That inference does not follow: an edge that drops or stalls disfavoured clients produces the same signature as a network filter, and the "a real browser fails identically" control was run from the same blocked egress, so it confirmed the egress rather than testing the hypothesis. **The lesson: a negative result from one egress is a fact about that egress, not about the source.** Reachability claims that gate a VETO criterion deserve a positive control before they are believed.
+
+#### The AIF register — server-side rendered, searchable, no JS
+
+`intmId=16` is "Registered Alternative Investment Funds" (**1,991 entries** as at Jul 20, 2026). VERIFIED characteristics:
+
+- **Server-side rendered.** No JS execution required; content is in the HTML response. A headless browser is **not** needed.
+- **Not a plain GET.** The search is a Struts POST needing a `JSESSIONID` cookie and an `org.apache.struts.taglib.html.TOKEN` hidden field, both from a seed GET of the register page.
+- **Substring matching, but literal.** VERIFIED: `Alternatives Investment Trust` returns 4 trusts across 3 managers. But full legal names match nothing — `Neo Asset Management Private Limited` returns zero, while `Neo` returns 7.
+- Results render as title/value **card divs**, not `<tr>` rows — a table parser reads zero rows off a page full of data.
+
+**The trap.** A POST missing its cookie or token returns HTTP 200 with a ~21.7 KB page carrying neither results nor an error — indistinguishable from an empty result. A genuine empty result says **"No record(s) available"**. Any adapter must separate `results` / `empty` / `unparseable` and let only `empty` become a negative finding.
+
+#### Registration found for the test case
+
+Searching the register for `Neo` returns **7 registered AIFs**, of which these carry `@neoassetmanagement.com` contacts:
+
+| Registered AIF (trust) | Registration No. | Validity |
+|---|---|---|
+| Neo Alternatives Investment Trust | `IN/AIF3/21-22/1001` | Feb 25, 2022 – Perpetual |
+| Neo Credit Alternatives Investment Trust | `IN/AIF2/22-23/1042` | Apr 05, 2022 – Perpetual |
+| NEO CREDIT INVESTMENT TRUST | `IN/AIF2/24-25/1656` | Dec 05, 2024 – Perpetual |
+| Neo Private Equity Alternative Investment Trust | `IN/AIF2/24-25/1770` | Mar 27, 2025 – Perpetual |
+| NEO WSI REAL ESTATE TRUST | `IN/AIF2/26-27/2251` | Jul 07, 2026 – Perpetual |
+
+**A structural finding that governs how CR-0001 may ever fire:** SEBI registers the **AIF trust**, not the manager company and not the individual scheme. Searches for `Neo Infra` and `Infra Income` both return a genuine "No record(s) available", because **Neo Infra Income Opportunities Fund II is a scheme of a registered trust, not itself a registered entity**. Neither is `Neo Asset Management Private Limited` in the register — the manager is not the registrant.
+
+Therefore **an absent fund or manager name is not evidence of non-registration** and must never be reported as one. This register cannot express a positive finding of non-registration; confirming which trust a scheme sits under requires the trust name or registration number from the PPM.
+
+#### Enforcement orders — full-text searchable
+
+`sid=2` is Enforcement; `ssid=9` is **Orders** (adjudication, settlement, WTM). Same session+token POST pattern, with a `search` field.
+
+**VERIFIED to discriminate, which matters more than that it returns 200:** `Reliance` → **56 orders**; `Neo Asset Management` → **"No record(s) available"**. Without that positive control a clean result would be indistinguishable from a search field silently ignoring its input. So the clean result for the test manager is a **genuine finding**, not an unrun search.
+
+Scope caveat: `ssid=9` covers Orders only. Recovery Proceedings (`ssid=50`, 18,863 records), Orders That Could Not be Served (`ssid=12`), and Unserved Summons (`ssid=13`) are separate listings, reachable by the same pattern but not currently searched.
+
+Sub-portal `siportal.sebi.gov.in/intermediary/AIFDetails.html` remains a "Site under construction" stub, © 2016 — VERIFIED, still no data. The main register above supersedes it.
 
 ### 4. SEBI SCORES — PARTIAL / LOGIN-REQUIRED
 
@@ -229,7 +275,7 @@ Raised explicitly because the coordinator asked to know before building, not aft
 | SCORES | Disallows `/c/*` and `/login` | Avoid those paths. |
 | IFSCA | Empty robots.txt | No stated restriction. Still, prefer scheduled mirroring over hammering. |
 | MCA | **Could not be read (403)** | Unknown. Assume restrictive. Login + CAPTCHA are deliberate access controls — **treat as off-limits to automation**; use a licensed provider. |
-| SEBI | Could not be read (unreachable) | Unknown. Re-check from India. |
+| SEBI | AIF register + enforcement orders, read live over HTTP | Manager's registered trusts and registration numbers found; no enforcement orders. Scheme itself is not separately registered (structural). |
 
 **Position on CAPTCHA:** MCA's CAPTCHA is technically the weak self-hosted kind, but it is an intentional access control on a government system. Defeating it is a legal and reputational exposure disproportionate to the value of a DIN status check, and it would be fragile. Route this through a licensed provider.
 
@@ -245,14 +291,14 @@ Raised explicitly because the coordinator asked to know before building, not aft
 
 ### Resolve before committing — highest priority
 
-4. **Re-run the entire SEBI assessment from an Indian IP.** Questions 1, 2 and 4 — AIF registration validity, intermediary status, and enforcement actions — are the *regulatory core* of the brief and **all remain unanswered**. The block is at TLS/network level, so this needs different egress, not better code. Until this is done the SEBI half of the product is unscoped. **Treat this as the top task.**
+4. ~~**Re-run the entire SEBI assessment from an Indian IP.**~~ **DONE 2026-07-21 — and the premise was wrong.** SEBI needed browser headers, not a different egress. Questions 1, 2 and 4 are now **answered**: the AIF register (`intmId=16`) and enforcement orders (`sid=2&ssid=9`) are both server-side rendered, searchable over plain HTTP, and implemented in the engine. The remaining SEBI work is narrower: resolve a scheme to its parent trust (the register holds trusts, not schemes), and decide whether to extend enforcement coverage beyond `ssid=9` to recovery proceedings and unserved summons.
 5. **Talk to Probe42** (and price MCA's bulk data product) for MCA company/director/financial data. This legitimately resolves the login wall, the CAPTCHA, and the Tofler robots.txt problem in one move.
 
 ### Defer / flag for manual check
 
 6. **Filed financials** — free sources give only a banded revenue figure. Either license, or flag for manual review. Do not promise precise financials in v1.
 7. **DIN status & disqualification** — CAPTCHA-gated; route via provider. Do check the **"Companies/Directors Under Prosecution"** page first (identified, not yet opened) — it may be a free static list.
-8. **SEBI enforcement actions** — cannot be scoped until (4) is done. Meanwhile, flag for manual check. This is a high-stakes signal and a false "no actions found" is worse than an honest "not checked".
+8. ~~**SEBI enforcement actions** — cannot be scoped until (4) is done.~~ **Scoped and built.** Full-text search over Enforcement > Orders, VERIFIED to discriminate against a positive control. The "false no-actions-found is worse than an honest not-checked" principle still governs the implementation: an unparseable response is recorded `unavailable`, never clean.
 9. **SCORES complaints** — assume not public. Drop from v1.
 10. **NSE/BSE** — not applicable to unlisted private managers. Drop.
 11. **Bulk/open data** — VERIFIED dead end. Do not spend further time here.
@@ -265,7 +311,7 @@ Every check should return one of **VERIFIED / NOT FOUND / COULD NOT CHECK** — 
 
 ## Open questions
 
-1. Is `www.sebi.gov.in` reachable from an Indian IP, and what are the real AIF-register and enforcement-search URLs? **Blocks the regulatory half of the product.**
+1. ~~Is `www.sebi.gov.in` reachable, and what are the real AIF-register and enforcement-search URLs?~~ **ANSWERED 2026-07-21.** Reachable with browser headers from any egress tested; URLs documented in §1 and implemented. Superseded by: how should a scheme name be resolved to its parent registered trust, given the register indexes trusts only? Today the engine searches the manager's distinctive token and reports matches as supporting evidence, never as a negative.
 2. What is the IFSCA `DirectoryChildDataByID` payload? Would downgrade IFSCA to cheap HTTP.
 3. Is "Companies/Directors Under Prosecution" free and static?
 4. Probe42 / MCA bulk pricing, coverage, rate limits — all UNVERIFIED.
